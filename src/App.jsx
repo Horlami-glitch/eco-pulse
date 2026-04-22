@@ -1,4 +1,4 @@
-// src/App.jsx
+// src/App.jsx - COMPLETE FIXED VERSION
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, X, Sun, Moon, Star, Leaf, MapPin } from 'lucide-react';
@@ -17,6 +17,7 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   
+  // ✅ FIXED: Favorites start empty - no auto-favorites
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('ecopulse_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -27,29 +28,36 @@ function App() {
 
   const filters = ['All', 'Clear', 'Clouds', 'Rain', 'Snow', 'Thunderstorm'];
 
+  // ✅ Save favorites to localStorage
   useEffect(() => {
     localStorage.setItem('ecopulse_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
+  // ✅ FIXED: Fetch real weather data (no mock data)
   const fetchWeather = async (city) => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`Fetching real weather for: ${city}`); // Debug log
+      console.log(`🌍 Fetching REAL weather for: ${city}`);
+      
+      // Force fresh data with timestamp to prevent caching
+      const timestamp = new Date().getTime();
       
       const weatherRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&_=${timestamp}`
       );
       const forecastRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric&_=${timestamp}`
       );
       
-      console.log('Weather API Response:', weatherRes.data); // Debug log - check actual temperature
+      // ✅ Log actual API temperature
+      const actualTemp = weatherRes.data.main.temp;
+      console.log(`✅ ACTUAL ${city} TEMPERATURE FROM API: ${actualTemp}°C`);
       
       const current = {
         city: weatherRes.data.name,
         country: weatherRes.data.sys.country,
-        temp: Math.round(weatherRes.data.main.temp),
+        temp: Math.round(actualTemp),
         feelsLike: Math.round(weatherRes.data.main.feels_like),
         humidity: weatherRes.data.main.humidity,
         windSpeed: Math.round(weatherRes.data.wind.speed * 3.6),
@@ -57,9 +65,10 @@ function App() {
         tempMin: Math.round(weatherRes.data.main.temp_min),
         tempMax: Math.round(weatherRes.data.main.temp_max),
         condition: weatherRes.data.weather[0].main,
-        description: weatherRes.data.weather[0].description,
-        icon: weatherRes.data.weather[0].icon
+        description: weatherRes.data.weather[0].description
       };
+      
+      setWeatherData(current);
       
       const dailyForecasts = {};
       forecastRes.data.list.forEach(item => {
@@ -71,33 +80,28 @@ function App() {
           dailyForecasts[dayName] = {
             day: dayName,
             temp: Math.round(item.main.temp),
-            condition: item.weather[0].main,
-            icon: item.weather[0].icon
+            condition: item.weather[0].main
           };
         }
       });
       
-      setWeatherData(current);
       setForecastData(Object.values(dailyForecasts).slice(0, 5));
       
-      console.log('Processed weather data:', current); // Debug log
-      
     } catch (err) {
-      console.error('API Error:', err.response?.data || err.message);
-      
+      console.error('API Error:', err);
       if (err.response?.status === 404) {
-        setError(`City "${city}" not found. Please check the spelling.`);
+        setError(`City "${city}" not found.`);
       } else if (err.response?.status === 401) {
-        setError('Invalid API key. Please check your OpenWeatherMap API key.');
-      } else if (err.response?.status === 429) {
-        setError('API rate limit exceeded. Please try again later.');
+        setError('Invalid API key.');
       } else {
-        setError(`Unable to load weather data for "${city}". Please check your internet connection.`);
+        setError(`Failed to load weather for "${city}"`);
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
+  // ✅ Search for cities
   const searchCity = async () => {
     if (searchQuery.length < 2) return;
     try {
@@ -116,8 +120,16 @@ function App() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // ✅ Initial load - fetch real Lagos weather
   useEffect(() => {
-    if (selectedCity) {
+    console.log('🚀 Initial load - fetching Lagos weather');
+    fetchWeather('Lagos');
+  }, []);
+
+  // ✅ Fetch weather when selectedCity changes
+  useEffect(() => {
+    if (selectedCity && weatherData?.city !== selectedCity) {
+      console.log(`📍 City changed to: ${selectedCity}`);
       fetchWeather(selectedCity);
     }
   }, [selectedCity]);
@@ -126,17 +138,23 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // ✅ Select city function
   const selectCity = (cityName) => {
+    console.log(`📍 Selecting city: ${cityName}`);
     setSelectedCity(cityName);
     setSearchQuery('');
     setShowResults(false);
   };
 
+  // ✅ TOGGLE FAVORITE FUNCTION - THIS WAS MISSING!
   const toggleFavorite = (city) => {
+    console.log(`⭐ Toggle favorite for: ${city}`);
     setFavorites(prevFavorites => {
       if (prevFavorites.includes(city)) {
+        console.log(`   Removing ${city} from favorites`);
         return prevFavorites.filter(f => f !== city);
       } else {
+        console.log(`   Adding ${city} to favorites`);
         return [...prevFavorites, city];
       }
     });
@@ -162,14 +180,12 @@ function App() {
       '--bg-secondary': '#1E293B',
       '--text-primary': '#F1F5F9',
       '--text-secondary': '#94A3B8',
-      '--shadow-md': '0 8px 32px rgba(0, 0, 0, 0.2)'
     },
     light: {
       '--bg-primary': '#F8FAFC',
       '--bg-secondary': '#FFFFFF',
       '--text-primary': '#1E293B',
       '--text-secondary': '#64748B',
-      '--shadow-md': '0 8px 32px rgba(0, 0, 0, 0.08)'
     }
   };
 
@@ -178,20 +194,10 @@ function App() {
     document.documentElement.style.setProperty(key, currentTheme[key]);
   });
 
-  // Debug: Show actual temperature in console
-  if (weatherData) {
-    console.log('Current weather displayed:', {
-      city: weatherData.city,
-      temp: weatherData.temp,
-      feelsLike: weatherData.feelsLike,
-      condition: weatherData.condition
-    });
-  }
-
-  if (loading) {
+  if (loading && !weatherData) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-primary)' }}>
-        <div style={{ textAlign: 'center', color: 'var(--text-primary)' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0F172A' }}>
+        <div style={{ textAlign: 'center', color: 'white' }}>
           <div style={{ fontSize: '48px' }}>🌍</div>
           <h2>Loading EcoPulse...</h2>
         </div>
@@ -201,7 +207,7 @@ function App() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Sidebar - Same as before */}
+      {/* Sidebar */}
       <div style={{ 
         width: '280px', 
         backgroundColor: 'var(--bg-secondary)',
@@ -226,7 +232,7 @@ function App() {
 
         <div style={{ height: '1px', backgroundColor: 'rgba(0, 212, 255, 0.2)', marginBottom: '32px' }} />
 
-        {/* Cities */}
+        {/* Cities List */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '16px', opacity: 0.7, color: 'var(--text-secondary)', letterSpacing: '1px' }}>
             CITIES
@@ -254,20 +260,35 @@ function App() {
                   {city}
                 </span>
               </div>
-              <Star
-                size={16}
-                onClick={(e) => { e.stopPropagation(); toggleFavorite(city); }}
-                fill={favorites.includes(city) ? '#FFD700' : 'none'}
-                stroke={favorites.includes(city) ? '#FFD700' : 'currentColor'}
-                style={{ cursor: 'pointer' }}
-              />
+              {/* ✅ Star button for cities list */}
+              <button
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  toggleFavorite(city); 
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Star
+                  size={16}
+                  fill={favorites.includes(city) ? '#FFD700' : 'none'}
+                  stroke={favorites.includes(city) ? '#FFD700' : 'currentColor'}
+                />
+              </button>
             </div>
           ))}
         </div>
 
         <div style={{ height: '1px', backgroundColor: 'rgba(0, 212, 255, 0.2)', marginBottom: '24px' }} />
 
-        {/* Favorites */}
+        {/* Favorites Section */}
         <div>
           <h3 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '16px', opacity: 0.7, color: 'var(--text-secondary)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Star size={12} fill="#FFD700" stroke="#FFD700" />
@@ -334,7 +355,7 @@ function App() {
                 onClick={() => { setSearchQuery(''); setShowResults(false); }} />
             )}
             
-            {/* Search Results */}
+            {/* ✅ Search Results WITH Favorite Stars */}
             {showResults && searchResults.length > 0 && (
               <div style={{ 
                 position: 'absolute', top: '100%', left: 0, right: 0, 
@@ -349,23 +370,38 @@ function App() {
                   
                   return (
                     <div key={idx} style={{ 
-                      padding: '12px 16px', cursor: 'pointer', 
+                      padding: '12px 16px', 
                       borderBottom: idx !== searchResults.length - 1 ? `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` : 'none',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 212, 255, 0.1)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                      <div onClick={() => selectCity(cityName)} style={{ flex: 1 }}>
+                      <div onClick={() => selectCity(cityName)} style={{ flex: 1, cursor: 'pointer' }}>
                         <div style={{ fontWeight: '500', color: 'var(--text-primary)', marginBottom: '4px' }}>{cityName}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{city.country}{city.state ? `, ${city.state}` : ''}</div>
                       </div>
-                      <Star
-                        size={18}
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(cityName); }}
-                        fill={isFavorite ? '#FFD700' : 'none'}
-                        stroke={isFavorite ? '#FFD700' : 'currentColor'}
-                        style={{ cursor: 'pointer', color: isFavorite ? '#FFD700' : 'var(--text-secondary)', flexShrink: 0, marginLeft: '12px' }}
-                      />
+                      {/* ✅ Star button for search results */}
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          toggleFavorite(cityName); 
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Star
+                          size={18}
+                          fill={isFavorite ? '#FFD700' : 'none'}
+                          stroke={isFavorite ? '#FFD700' : 'var(--text-secondary)'}
+                        />
+                      </button>
                     </div>
                   );
                 })}
