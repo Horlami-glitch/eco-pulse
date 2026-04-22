@@ -1,7 +1,8 @@
-// src/App.jsx - COMPLETE FIXED VERSION
+// src/App.jsx - COMPLETE FIXED VERSION WITH ALL FEATURES
+// ✅ Fixed: Abuja and all cities work, Live timestamp, Refresh, Favorites
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, X, Sun, Moon, Star, Leaf, MapPin } from 'lucide-react';
+import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock } from 'lucide-react';
 import WeatherCard from './components/WeatherCard';
 import WeatherOverview from './components/WeatherOverview';
 
@@ -16,8 +17,12 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
-  // ✅ FIXED: Favorites start empty - no auto-favorites
+  // ✅ Live timestamp
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // ✅ Favorites start EMPTY
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('ecopulse_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -26,36 +31,56 @@ function App() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [theme, setTheme] = useState('dark');
 
-  const filters = ['All', 'Clear', 'Clouds', 'Rain', 'Snow', 'Thunderstorm'];
+  const filters = ['All', 'Clear', 'Clouds', 'Rain'];
+
+  // ✅ Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // ✅ Save favorites to localStorage
   useEffect(() => {
     localStorage.setItem('ecopulse_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // ✅ FIXED: Fetch real weather data (no mock data)
+  // ✅ Apply theme
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // ✅ FETCH WEATHER - FIXED FOR ALL CITIES
   const fetchWeather = async (city) => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`🌍 Fetching REAL weather for: ${city}`);
+      console.log(`🌍 Fetching weather for: ${city}`);
       
-      // Force fresh data with timestamp to prevent caching
+      // Format city name for Nigerian cities to help API
+      let searchCity = city;
+      if (city.toLowerCase() === 'abuja') {
+        searchCity = 'Abuja, NG';
+      } else if (city.toLowerCase() === 'lagos') {
+        searchCity = 'Lagos, NG';
+      }
+      
       const timestamp = new Date().getTime();
       
       const weatherRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&_=${timestamp}`
-      );
-      const forecastRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric&_=${timestamp}`
+        `https://api.openweathermap.org/data/2.5/weather?q=${searchCity}&appid=${API_KEY}&units=metric&_=${timestamp}`
       );
       
-      // ✅ Log actual API temperature
+      const forecastRes = await axios.get(
+        `https://api.openweathermap.org/data/2.5/forecast?q=${searchCity}&appid=${API_KEY}&units=metric&_=${timestamp}`
+      );
+      
       const actualTemp = weatherRes.data.main.temp;
-      console.log(`✅ ACTUAL ${city} TEMPERATURE FROM API: ${actualTemp}°C`);
+      console.log(`✅ ${city} temperature: ${actualTemp}°C`);
       
       const current = {
-        city: weatherRes.data.name,
+        city: city, // Keep original city name for display
         country: weatherRes.data.sys.country,
         temp: Math.round(actualTemp),
         feelsLike: Math.round(weatherRes.data.main.feels_like),
@@ -89,15 +114,55 @@ function App() {
       
     } catch (err) {
       console.error('API Error:', err);
+      
+      // Try fallback without country code
       if (err.response?.status === 404) {
-        setError(`City "${city}" not found.`);
+        try {
+          console.log('Trying without country code...');
+          const fallbackRes = await axios.get(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+          );
+          
+          const actualTemp = fallbackRes.data.main.temp;
+          const current = {
+            city: city,
+            country: fallbackRes.data.sys.country,
+            temp: Math.round(actualTemp),
+            feelsLike: Math.round(fallbackRes.data.main.feels_like),
+            humidity: fallbackRes.data.main.humidity,
+            windSpeed: Math.round(fallbackRes.data.wind.speed * 3.6),
+            pressure: fallbackRes.data.main.pressure,
+            tempMin: Math.round(fallbackRes.data.main.temp_min),
+            tempMax: Math.round(fallbackRes.data.main.temp_max),
+            condition: fallbackRes.data.weather[0].main,
+            description: fallbackRes.data.weather[0].description
+          };
+          
+          setWeatherData(current);
+          setError(null);
+          return;
+        } catch (fallbackErr) {
+          setError(`City "${city}" not found.`);
+        }
       } else if (err.response?.status === 401) {
         setError('Invalid API key.');
+      } else if (err.response?.status === 429) {
+        setError('API limit reached. Please wait.');
       } else {
         setError(`Failed to load weather for "${city}"`);
       }
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // ✅ Refresh weather
+  const refreshWeather = () => {
+    if (selectedCity) {
+      setRefreshing(true);
+      setWeatherData(null);
+      fetchWeather(selectedCity);
     }
   };
 
@@ -115,65 +180,86 @@ function App() {
     }
   };
 
+  // ✅ Debounce search
   useEffect(() => {
-    const timer = setTimeout(searchCity, 500);
+    const timer = setTimeout(() => {
+      if (searchQuery) searchCity();
+    }, 500);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // ✅ Initial load - fetch real Lagos weather
+  // ✅ Initial load
   useEffect(() => {
-    console.log('🚀 Initial load - fetching Lagos weather');
     fetchWeather('Lagos');
   }, []);
 
-  // ✅ Fetch weather when selectedCity changes
+  // ✅ Fetch when selected city changes
   useEffect(() => {
     if (selectedCity && weatherData?.city !== selectedCity) {
-      console.log(`📍 City changed to: ${selectedCity}`);
       fetchWeather(selectedCity);
     }
   }, [selectedCity]);
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // ✅ Select city function
+  // ✅ Select city
   const selectCity = (cityName) => {
-    console.log(`📍 Selecting city: ${cityName}`);
     setSelectedCity(cityName);
     setSearchQuery('');
     setShowResults(false);
   };
 
-  // ✅ TOGGLE FAVORITE FUNCTION - THIS WAS MISSING!
+  // ✅ Toggle favorite
   const toggleFavorite = (city) => {
-    console.log(`⭐ Toggle favorite for: ${city}`);
-    setFavorites(prevFavorites => {
-      if (prevFavorites.includes(city)) {
-        console.log(`   Removing ${city} from favorites`);
-        return prevFavorites.filter(f => f !== city);
+    setFavorites(prev => {
+      if (prev.includes(city)) {
+        return prev.filter(f => f !== city);
       } else {
-        console.log(`   Adding ${city} to favorites`);
-        return [...prevFavorites, city];
+        return [...prev, city];
       }
     });
   };
 
+  // ✅ Retry fetch
+  const retryFetchWeather = () => {
+    if (selectedCity) {
+      fetchWeather(selectedCity);
+    }
+  };
+
+  // ✅ Format time
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
+
+  // ✅ Format date
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // ✅ Get weather icon
   const getWeatherIcon = (condition) => {
     const c = condition?.toLowerCase() || '';
     if (c === 'clear') return '☀️';
     if (c === 'clouds') return '⛅';
     if (c.includes('rain')) return '🌧️';
     if (c.includes('snow')) return '❄️';
-    if (c.includes('thunder')) return '⛈️';
     return '⛅';
   };
 
+  // ✅ Filter forecast
   const filteredForecast = activeFilter === 'All' 
     ? forecastData 
     : forecastData.filter(day => day.condition === activeFilter);
 
+  // ✅ CSS Variables
   const cssVariables = {
     dark: {
       '--bg-primary': '#0F172A',
@@ -194,6 +280,9 @@ function App() {
     document.documentElement.style.setProperty(key, currentTheme[key]);
   });
 
+  const isCurrentCityFavorite = weatherData ? favorites.includes(weatherData.city) : false;
+
+  // ✅ Loading state
   if (loading && !weatherData) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0F172A' }}>
@@ -207,7 +296,8 @@ function App() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Sidebar */}
+      
+      {/* SIDEBAR */}
       <div style={{ 
         width: '280px', 
         backgroundColor: 'var(--bg-secondary)',
@@ -232,7 +322,7 @@ function App() {
 
         <div style={{ height: '1px', backgroundColor: 'rgba(0, 212, 255, 0.2)', marginBottom: '32px' }} />
 
-        {/* Cities List */}
+        {/* CITIES LIST */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '16px', opacity: 0.7, color: 'var(--text-secondary)', letterSpacing: '1px' }}>
             CITIES
@@ -260,35 +350,26 @@ function App() {
                   {city}
                 </span>
               </div>
-              {/* ✅ Star button for cities list */}
-              <button
+              <div
                 onClick={(e) => { 
                   e.stopPropagation(); 
                   toggleFavorite(city); 
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                style={{ cursor: 'pointer', padding: '4px' }}
               >
                 <Star
                   size={16}
                   fill={favorites.includes(city) ? '#FFD700' : 'none'}
                   stroke={favorites.includes(city) ? '#FFD700' : 'currentColor'}
                 />
-              </button>
+              </div>
             </div>
           ))}
         </div>
 
         <div style={{ height: '1px', backgroundColor: 'rgba(0, 212, 255, 0.2)', marginBottom: '24px' }} />
 
-        {/* Favorites Section */}
+        {/* FAVORITES SECTION */}
         <div>
           <h3 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '16px', opacity: 0.7, color: 'var(--text-secondary)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Star size={12} fill="#FFD700" stroke="#FFD700" />
@@ -327,12 +408,14 @@ function App() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* MAIN CONTENT */}
       <div style={{ marginLeft: '280px', padding: '32px', flex: 1, overflowY: 'auto', height: '100vh', backgroundColor: 'var(--bg-primary)' }}>
         
-        {/* Search Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-          <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
+        {/* HEADER */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
+          
+          {/* Search Bar */}
+          <div style={{ position: 'relative', flex: 1, maxWidth: '350px' }}>
             <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', zIndex: 1 }} />
             <input
               type="text"
@@ -355,7 +438,7 @@ function App() {
                 onClick={() => { setSearchQuery(''); setShowResults(false); }} />
             )}
             
-            {/* ✅ Search Results WITH Favorite Stars */}
+            {/* SEARCH RESULTS */}
             {showResults && searchResults.length > 0 && (
               <div style={{ 
                 position: 'absolute', top: '100%', left: 0, right: 0, 
@@ -380,28 +463,19 @@ function App() {
                         <div style={{ fontWeight: '500', color: 'var(--text-primary)', marginBottom: '4px' }}>{cityName}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{city.country}{city.state ? `, ${city.state}` : ''}</div>
                       </div>
-                      {/* ✅ Star button for search results */}
-                      <button
+                      <div
                         onClick={(e) => { 
                           e.stopPropagation(); 
                           toggleFavorite(cityName); 
                         }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
+                        style={{ cursor: 'pointer', padding: '8px' }}
                       >
                         <Star
                           size={18}
                           fill={isFavorite ? '#FFD700' : 'none'}
                           stroke={isFavorite ? '#FFD700' : 'var(--text-secondary)'}
                         />
-                      </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -409,14 +483,81 @@ function App() {
             )}
           </div>
 
-          <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            style={{ backgroundColor: 'var(--bg-secondary)', border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, borderRadius: '48px', padding: '10px 20px', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {theme === 'dark' ? <Sun size={18} style={{ color: '#FFD700' }} /> : <Moon size={18} style={{ color: '#00D4FF' }} />}
-            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
+          {/* Right Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            
+            {/* LIVE TIMESTAMP */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: 'var(--bg-secondary)',
+              padding: '8px 16px',
+              borderRadius: '48px',
+              border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: '#10b981',
+                animation: 'pulse 2s infinite'
+              }} />
+              <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600' }}>LIVE</span>
+              <Clock size={14} style={{ color: 'var(--text-secondary)' }} />
+              <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: '500' }}>
+                {formatTime(currentTime)}
+              </span>
+            </div>
+
+            {/* REFRESH BUTTON */}
+            <button
+              onClick={refreshWeather}
+              disabled={refreshing}
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                borderRadius: '48px',
+                padding: '10px 16px',
+                cursor: 'pointer',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                opacity: refreshing ? 0.7 : 1
+              }}
+            >
+              <RefreshCw 
+                size={16} 
+                style={{ 
+                  color: '#00D4FF',
+                  animation: refreshing ? 'spin 1s linear infinite' : 'none'
+                }} 
+              />
+              <span style={{ fontSize: '13px', fontWeight: '500' }}>Refresh</span>
+            </button>
+
+            {/* THEME TOGGLE */}
+            <button 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              style={{ 
+                backgroundColor: 'var(--bg-secondary)', 
+                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, 
+                borderRadius: '48px', 
+                padding: '10px 20px', 
+                cursor: 'pointer', 
+                color: 'var(--text-primary)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px' 
+              }}>
+              {theme === 'dark' ? <Sun size={18} style={{ color: '#FFD700' }} /> : <Moon size={18} style={{ color: '#00D4FF' }} />}
+              <span style={{ fontSize: '13px', fontWeight: '500' }}>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Filter Pills */}
+        {/* FILTER PILLS */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
           {filters.map(filter => (
             <button key={filter} onClick={() => setActiveFilter(filter)}
@@ -426,20 +567,86 @@ function App() {
           ))}
         </div>
 
-        {error && <div style={{ backgroundColor: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '10px', padding: '14px', marginBottom: '24px', color: '#ef4444' }}>⚠️ {error}</div>}
+        {/* ERROR WITH RETRY */}
+        {error && (
+          <div style={{ 
+            backgroundColor: 'rgba(239,68,68,0.15)', 
+            border: '1px solid #ef4444', 
+            borderRadius: '10px', 
+            padding: '14px 18px', 
+            marginBottom: '24px', 
+            color: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span>⚠️ {error}</span>
+            <button
+              onClick={retryFetchWeather}
+              style={{
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 14px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
-        {/* Weather Display */}
+        {/* WEATHER DISPLAY */}
         {weatherData && (
           <>
             <WeatherCard weather={weatherData} />
-            <WeatherOverview weatherData={weatherData} theme={theme} />
+            
+            <div style={{ position: 'relative' }}>
+              <WeatherOverview weatherData={weatherData} theme={theme} />
+              
+              {/* FAVORITE BUTTON */}
+              <button
+                onClick={() => toggleFavorite(weatherData.city)}
+                style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  backgroundColor: isCurrentCityFavorite ? 'rgba(255, 215, 0, 0.15)' : 'var(--bg-secondary)',
+                  border: `1px solid ${isCurrentCityFavorite ? '#FFD700' : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')}`,
+                  borderRadius: '48px',
+                  padding: '10px 18px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                <Star
+                  size={18}
+                  fill={isCurrentCityFavorite ? '#FFD700' : 'none'}
+                  stroke={isCurrentCityFavorite ? '#FFD700' : 'currentColor'}
+                />
+                <span style={{ fontSize: '13px', fontWeight: '500' }}>
+                  {isCurrentCityFavorite ? 'Saved' : 'Add to Favorites'}
+                </span>
+              </button>
+            </div>
           </>
         )}
 
-        {/* 5-Day Forecast */}
+        {/* 5-DAY FORECAST */}
         {forecastData.length > 0 && (
           <div style={{ marginTop: '32px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: 'var(--text-primary)' }}>5-Day Forecast</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>5-Day Forecast</h2>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {formatDate(currentTime)}
+              </span>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '16px' }}>
               {filteredForecast.map((day, idx) => (
                 <div key={idx} style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
@@ -453,6 +660,17 @@ function App() {
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 }
