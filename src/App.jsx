@@ -16,11 +16,22 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [favorites, setFavorites] = useState(['Lagos', 'London']);
+  
+  // ✅ FIXED: Start with EMPTY favorites array - no auto-favorites
+  const [favorites, setFavorites] = useState(() => {
+    const saved = localStorage.getItem('ecopulse_favorites');
+    return saved ? JSON.parse(saved) : []; // Empty array by default
+  });
+  
   const [activeFilter, setActiveFilter] = useState('All');
   const [theme, setTheme] = useState('dark');
 
   const filters = ['All', 'Clear', 'Clouds', 'Rain', 'Snow', 'Thunderstorm'];
+
+  // ✅ Save favorites to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('ecopulse_favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   const fetchWeather = async (city) => {
     setLoading(true);
@@ -104,12 +115,17 @@ function App() {
     setShowResults(false);
   };
 
+  // ✅ FIXED: Proper toggle favorite function
   const toggleFavorite = (city) => {
-    if (favorites.includes(city)) {
-      setFavorites(favorites.filter(f => f !== city));
-    } else {
-      setFavorites([...favorites, city]);
-    }
+    setFavorites(prevFavorites => {
+      if (prevFavorites.includes(city)) {
+        // Remove from favorites
+        return prevFavorites.filter(f => f !== city);
+      } else {
+        // Add to favorites
+        return [...prevFavorites, city];
+      }
+    });
   };
 
   const getWeatherIcon = (condition) => {
@@ -163,7 +179,7 @@ function App() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Sidebar - Figma Layout */}
+      {/* Sidebar */}
       <div style={{ 
         width: '280px', 
         backgroundColor: 'var(--bg-secondary)',
@@ -175,7 +191,7 @@ function App() {
         top: 0,
         overflowY: 'auto'
       }}>
-        {/* Logo Section with Leaf Icon */}
+        {/* Logo Section */}
         <div style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <Leaf size={28} style={{ color: '#00D4FF' }} />
@@ -186,7 +202,6 @@ function App() {
           </p>
         </div>
 
-        {/* Underline after logo */}
         <div style={{ 
           height: '1px', 
           backgroundColor: 'rgba(0, 212, 255, 0.2)',
@@ -227,7 +242,10 @@ function App() {
               </span>
               <Star
                 size={16}
-                onClick={(e) => { e.stopPropagation(); toggleFavorite(city); }}
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  toggleFavorite(city); 
+                }}
                 fill={favorites.includes(city) ? '#FFD700' : 'none'}
                 stroke={favorites.includes(city) ? '#FFD700' : 'currentColor'}
                 style={{ cursor: 'pointer' }}
@@ -236,7 +254,6 @@ function App() {
           ))}
         </div>
 
-        {/* Underline after Tokyo */}
         <div style={{ 
           height: '1px', 
           backgroundColor: 'rgba(0, 212, 255, 0.2)',
@@ -244,19 +261,24 @@ function App() {
         }} />
 
         {/* FAVORITES Section */}
-        {favorites.length > 0 && (
-          <div>
-            <h3 style={{ 
-              fontSize: '12px', 
-              fontWeight: '600', 
-              marginBottom: '16px', 
-              opacity: 0.7, 
-              color: 'var(--text-secondary)',
-              letterSpacing: '1px'
-            }}>
-              FAVORITES
-            </h3>
-            {favorites.map(city => (
+        <div>
+          <h3 style={{ 
+            fontSize: '12px', 
+            fontWeight: '600', 
+            marginBottom: '16px', 
+            opacity: 0.7, 
+            color: 'var(--text-secondary)',
+            letterSpacing: '1px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <Star size={12} fill="#FFD700" stroke="#FFD700" />
+            FAVORITES {favorites.length > 0 && `(${favorites.length})`}
+          </h3>
+          
+          {favorites.length > 0 ? (
+            favorites.map(city => (
               <div
                 key={city}
                 onClick={() => selectCity(city)}
@@ -278,9 +300,19 @@ function App() {
                   {city}
                 </span>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <p style={{ 
+              color: 'var(--text-secondary)', 
+              fontSize: '13px',
+              padding: '8px 12px',
+              fontStyle: 'italic',
+              opacity: 0.7
+            }}>
+              Click ☆ to add favorites
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
@@ -293,7 +325,7 @@ function App() {
         backgroundColor: 'var(--bg-primary)'
       }}>
         
-        {/* Search Bar and Theme Toggle - Figma Layout */}
+        {/* Search Bar and Theme Toggle */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -301,7 +333,6 @@ function App() {
           gap: '16px', 
           marginBottom: '32px' 
         }}>
-          {/* Search Bar with Icon */}
           <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
             <Search 
               size={18} 
@@ -355,7 +386,6 @@ function App() {
               />
             )}
             
-            {/* Search Results Dropdown */}
             {showResults && searchResults.length > 0 && (
               <div style={{ 
                 position: 'absolute', 
@@ -391,7 +421,6 @@ function App() {
             )}
           </div>
 
-          {/* Dark/Light Mode Toggle Button */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             style={{
@@ -406,14 +435,6 @@ function App() {
               gap: '10px',
               transition: 'all 0.2s ease',
               whiteSpace: 'nowrap'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 212, 255, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             {theme === 'dark' ? <Sun size={18} style={{ color: '#FFD700' }} /> : <Moon size={18} style={{ color: '#00D4FF' }} />}
@@ -452,17 +473,14 @@ function App() {
           </div>
         )}
 
-        {/* Weather Card */}
         {weatherData && (
           <WeatherCard weather={weatherData} />
         )}
 
-        {/* Weather Overview */}
         {weatherData && (
           <WeatherOverview weatherData={weatherData} theme={theme} />
         )}
 
-        {/* 5-Day Forecast */}
         {forecastData.length > 0 && (
           <div style={{ marginTop: '32px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: 'var(--text-primary)' }}>5-Day Forecast</h2>

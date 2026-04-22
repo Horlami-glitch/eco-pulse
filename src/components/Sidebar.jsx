@@ -1,53 +1,64 @@
 // src/components/Sidebar.jsx
-import { Star } from 'lucide-react';
+import { Star, MapPin } from 'lucide-react';
 
 const Sidebar = ({ 
   selectedCity, 
   onCitySelect, 
-  favorites, 
+  favorites = [], // Default to empty array
   onToggleFavorite 
 }) => {
+  // Cities list - just display, no auto-favorite
   const cities = ['Lagos', 'Abuja', 'London', 'New York', 'Tokyo'];
 
   return (
     <div style={{
       width: '280px',
-      background: 'var(--bg-secondary)',
+      background: 'var(--bg-secondary, #0d2228)',
       padding: '24px',
       display: 'flex',
       flexDirection: 'column',
       gap: '32px',
-      borderRight: '1px solid rgba(255,255,255,0.1)',
+      borderRight: '1px solid rgba(0, 196, 138, 0.15)',
       height: '100vh',
       position: 'fixed',
       left: 0,
       top: 0,
       overflowY: 'auto'
     }}>
+      {/* Logo Section */}
       <div>
         <h1 style={{ 
-          color: 'var(--accent-cyan)', 
+          color: '#00c48a', 
           fontSize: '28px',
-          marginBottom: '8px'
+          marginBottom: '8px',
+          fontWeight: '700'
         }}>
           EcoPulse
         </h1>
-        <p className="body-text" style={{ opacity: 0.7, fontSize: '12px' }}>
+        <p style={{ 
+          opacity: 0.7, 
+          fontSize: '12px',
+          color: 'var(--text-secondary, #8899a6)',
+          letterSpacing: '0.3px'
+        }}>
           Weather & Sustainability
         </p>
       </div>
 
+      {/* Cities Section */}
       <div>
-        <h3 className="subtitle" style={{ 
+        <h3 style={{ 
           marginBottom: '16px', 
-          fontSize: '14px',
+          fontSize: '13px',
           fontWeight: '600',
-          letterSpacing: '0.5px',
-          opacity: 0.8
+          letterSpacing: '1.2px',
+          opacity: 0.7,
+          color: 'var(--text-secondary, #8899a6)',
+          textTransform: 'uppercase'
         }}>
-          CITIES
+          Cities
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {cities.map(city => (
             <div
               key={city}
@@ -56,17 +67,18 @@ const Sidebar = ({
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                background: selectedCity === city ? 'var(--accent-cyan)' : 'transparent',
-                color: selectedCity === city ? 'var(--dark-bg-primary)' : 'var(--text-primary)',
+                padding: '12px 12px',
+                borderRadius: '12px',
+                background: selectedCity === city ? 'rgba(0, 196, 138, 0.15)' : 'transparent',
+                color: selectedCity === city ? '#00c48a' : 'var(--text-primary, #ffffff)',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontWeight: selectedCity === city ? '600' : '400'
+                transition: 'all 0.2s ease',
+                fontWeight: selectedCity === city ? '600' : '400',
+                border: selectedCity === city ? '1px solid rgba(0, 196, 138, 0.3)' : '1px solid transparent'
               }}
               onMouseEnter={(e) => {
                 if (selectedCity !== city) {
-                  e.currentTarget.style.background = 'rgba(0,212,255,0.1)';
+                  e.currentTarget.style.background = 'rgba(0, 196, 138, 0.08)';
                 }
               }}
               onMouseLeave={(e) => {
@@ -75,7 +87,10 @@ const Sidebar = ({
                 }
               }}
             >
-              <span>{city}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MapPin size={14} style={{ color: '#00c48a', opacity: 0.8 }} />
+                <span>{city}</span>
+              </div>
               <Star
                 size={16}
                 onClick={(e) => {
@@ -84,46 +99,105 @@ const Sidebar = ({
                 }}
                 fill={favorites.includes(city) ? '#FFD700' : 'none'}
                 stroke={favorites.includes(city) ? '#FFD700' : 'currentColor'}
-                style={{ cursor: 'pointer' }}
+                style={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  opacity: favorites.includes(city) ? 1 : 0.5
+                }}
+                onMouseEnter={(e) => {
+                  if (!favorites.includes(city)) {
+                    e.currentTarget.style.opacity = '0.8';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!favorites.includes(city)) {
+                    e.currentTarget.style.opacity = '0.5';
+                  }
+                }}
               />
             </div>
           ))}
         </div>
       </div>
 
+      {/* Favorites Section - Only shows if there are favorites */}
       {favorites.length > 0 && (
         <div>
-          <h3 className="subtitle" style={{ 
+          <h3 style={{ 
             marginBottom: '16px', 
-            fontSize: '14px',
+            fontSize: '13px',
             fontWeight: '600',
-            letterSpacing: '0.5px',
-            opacity: 0.8
+            letterSpacing: '1.2px',
+            opacity: 0.7,
+            color: 'var(--text-secondary, #8899a6)',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
           }}>
-            FAVORITES
+            <Star size={12} fill="#FFD700" stroke="#FFD700" />
+            Favorites
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {favorites.map(city => (
               <div
                 key={city}
                 onClick={() => onCitySelect(city)}
                 style={{
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  background: selectedCity === city ? 'var(--accent-cyan)' : 'transparent',
-                  color: selectedCity === city ? 'var(--dark-bg-primary)' : 'var(--text-primary)',
+                  padding: '12px 12px',
+                  borderRadius: '12px',
+                  background: selectedCity === city ? 'rgba(0, 196, 138, 0.15)' : 'transparent',
+                  color: selectedCity === city ? '#00c48a' : 'var(--text-primary, #ffffff)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '10px',
+                  fontWeight: selectedCity === city ? '600' : '400',
+                  border: selectedCity === city ? '1px solid rgba(0, 196, 138, 0.3)' : '1px solid transparent'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCity !== city) {
+                    e.currentTarget.style.background = 'rgba(0, 196, 138, 0.08)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCity !== city) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
                 }}
               >
-                <Star size={14} fill="#FFD700" stroke="#FFD700" style={{ opacity: 0.8 }} />
+                <MapPin size={14} style={{ color: '#00c48a', opacity: 0.8 }} />
                 <span>{city}</span>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Show message if no favorites */}
+      {favorites.length === 0 && (
+        <div>
+          <h3 style={{ 
+            marginBottom: '16px', 
+            fontSize: '13px',
+            fontWeight: '600',
+            letterSpacing: '1.2px',
+            opacity: 0.7,
+            color: 'var(--text-secondary, #8899a6)',
+            textTransform: 'uppercase'
+          }}>
+            Favorites
+          </h3>
+          <p style={{ 
+            color: 'var(--text-secondary, #8899a6)', 
+            fontSize: '13px',
+            padding: '8px 12px',
+            fontStyle: 'italic',
+            opacity: 0.7
+          }}>
+            Click the star ☆ to add favorites
+          </p>
         </div>
       )}
     </div>
