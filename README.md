@@ -1,5 +1,6 @@
  🌍 EcoPulse — Sustainability Dashboard
- 📌 Overview
+ 
+     📌 Overview
 
 **EcoPulse** is a modern, interactive single-page application (SPA) that visualizes real-time environmental data using external APIs. It provides weather insights, forecasts, and dynamic data visualization in a clean, responsive dashboard interface.
 
@@ -8,11 +9,15 @@ This project demonstrates professional frontend development practices including 
 
 🚀 Live URL
 
-👉 **Live Application:**
-https://your-vercel-link.vercel.app
+      Live Application:
+eco-pulse-group3.vercel.app
+
+     GitHub Repository:
+https://github.com/Horlami-glitch/eco-pulse
+ 
  🎯 Key Features
 
-#🌦️ Real-Time Weather Data
+🌦️ Real-Time Weather Data
 
 i.  Fetches live data from OpenWeather API
 ii. Displays current weather conditions and forecasts
@@ -69,17 +74,17 @@ Design Highlights:
  Weather-focused UI hierarchy
  Responsive grid structure
 
-## 🔀 Git Workflow (Collaboration Simulation)
+🔀 Git Workflow (Collaboration Simulation)
 
 This project follows a real-world feature-branch workflow:
 
-### Branch Strategy:
+ Branch Strategy:
 
 * `feature/weekly-forecast`
 * `feature/chart-system`
 * `feature/ui-polish`
 
-### Workflow:
+ Workflow:
 
 * Features developed in separate branches
 * Changes merged using Pull Requests
