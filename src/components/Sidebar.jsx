@@ -1,13 +1,11 @@
-// src/components/Sidebar.jsx
 import { Star, MapPin } from 'lucide-react';
 
 const Sidebar = ({ 
   selectedCity, 
   onCitySelect, 
-  favorites = [], // Default to empty array
+  favorites = [], 
   onToggleFavorite 
 }) => {
-  // Cities list - just display, no auto-favorite
   const cities = ['Lagos', 'Abuja', 'London', 'New York', 'Tokyo'];
 
   return (

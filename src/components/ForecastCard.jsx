@@ -1,4 +1,3 @@
-// src/components/ForecastCard.jsx
 const ForecastCard = ({ day, temp, tempMin, condition, originalCondition }) => {
   const getWeatherIcon = (conditionName) => {
     const conditionLower = conditionName.toLowerCase();
