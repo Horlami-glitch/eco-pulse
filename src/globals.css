@@ -288,7 +288,7 @@ input:focus {
   margin-bottom: 24px;
 }
 
-/* src/global.css - Add this at the top of your main CSS file */
+/* src/global.css - */
 :root {
   --bg-primary: #0a1a1f;
   --bg-secondary: #0d2228;
