@@ -500,7 +500,7 @@ function App() {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                backgroundColor: '#10b981',
+                backgroundColor: '#10b',
                 animation: 'pulse 2s infinite'
               }} />
               <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600' }}>LIVE</span>
@@ -571,7 +571,7 @@ function App() {
         {error && (
           <div style={{ 
             backgroundColor: 'rgba(239,68,68,0.15)', 
-            border: '1px solid #ef4444', 
+            border: '1px solid #ef444333', 
             borderRadius: '10px', 
             padding: '14px 18px', 
             marginBottom: '24px', 
