@@ -215,5 +215,5 @@ It successfully fulfills all requirements of **SWD 413: Frontend Development**, 
 
  👨‍💻 Author
 
-Developed by **Horlami-glitch(Group 3 Leader) **
+Developed by Oyedeji Oluwaseun Olamilekan (Group 3 Leader) 
 Frontend Developer | Software & Web Development
