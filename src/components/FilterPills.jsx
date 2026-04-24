@@ -1,4 +1,3 @@
-// src/components/FilterPills.jsx
 import { Cloud, CloudRain, CloudSnow, CloudLightning, Sun, Layers } from 'lucide-react';
 
 const filters = [

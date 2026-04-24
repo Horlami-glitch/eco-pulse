@@ -1,4 +1,3 @@
-// src/components/WeatherCard.jsx (keeping the existing layout)
 import { Droplet, Wind, Thermometer, Gauge, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
 
 const WeatherCard = ({ weather }) => {

@@ -1,5 +1,3 @@
-// src/App.jsx - COMPLETE FIXED VERSION WITH ALL FEATURES
-// ✅ Fixed: Abuja and all cities work, Live timestamp, Refresh, Favorites
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock } from 'lucide-react';

@@ -1,10 +1,8 @@
-// src/components/WeatherBarChart.jsx
 import { Thermometer, Sunrise, Sunset } from 'lucide-react';
 
 const WeatherBarChart = ({ hourlyData, theme }) => {
   if (!hourlyData || hourlyData.length === 0) return null;
 
-  // Find max and min temps for scaling
   const temps = hourlyData.map(h => h.temp);
   const maxTemp = Math.max(...temps);
   const minTemp = Math.min(...temps);
