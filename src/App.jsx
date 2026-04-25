@@ -769,7 +769,7 @@ function App() {
           <Menu size={24} style={{ color: 'var(--text-primary)' }} />
         </button>
         
-        {/* Logo - CENTER (naturally centered with space-between) */}
+        {/* Logo - CENTER (using flex with space-between keeps it centered naturally) */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
