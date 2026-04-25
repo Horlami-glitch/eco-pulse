@@ -1,3 +1,6 @@
+// src/App.jsx - COMPLETE FIXED VERSION WITH ALL FEATURES + MOBILE RESPONSIVE
+// ✅ Fixed: Abuja and all cities work, Live timestamp, Refresh, Favorites
+// ✅ Mobile: Hamburger menu, responsive layout, touch-friendly
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock } from 'lucide-react';
@@ -17,8 +20,14 @@ function App() {
   const [showResults, setShowResults] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
+  // ✅ Live timestamp
   const [currentTime, setCurrentTime] = useState(new Date());
   
+  // ✅ Mobile responsive states
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  // ✅ Favorites start EMPTY
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('ecopulse_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -29,6 +38,7 @@ function App() {
 
   const filters = ['All', 'Clear', 'Clouds', 'Rain'];
 
+  // ✅ Update time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -36,17 +46,43 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  
+  // ✅ Check screen size for mobile
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // ✅ Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (isMobileMenuOpen && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isMobileMenuOpen]);
+
+  // ✅ Save favorites to localStorage
   useEffect(() => {
     localStorage.setItem('ecopulse_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  
+  // ✅ Apply theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  
+  // ✅ FETCH WEATHER - FIXED FOR ALL CITIES
   const fetchWeather = async (city) => {
     setLoading(true);
     setError(null);
@@ -75,7 +111,7 @@ function App() {
       console.log(`✅ ${city} temperature: ${actualTemp}°C`);
       
       const current = {
-        city: city, // Keep original city name for display
+        city: city,
         country: weatherRes.data.sys.country,
         temp: Math.round(actualTemp),
         feelsLike: Math.round(weatherRes.data.main.feels_like),
@@ -200,6 +236,7 @@ function App() {
     setSelectedCity(cityName);
     setSearchQuery('');
     setShowResults(false);
+    if (isMobile) setIsMobileMenuOpen(false);
   };
 
   // ✅ Toggle favorite
@@ -292,6 +329,33 @@ function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       
+      {/* HAMBURGER MENU BUTTON - MOBILE ONLY */}
+      {isMobile && (
+        <button 
+          className="hamburger-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{
+            display: 'flex',
+            position: 'fixed',
+            top: '16px',
+            left: '16px',
+            zIndex: 1001,
+            background: '#00D4FF',
+            border: 'none',
+            width: '44px',
+            height: '44px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            color: '#0F172A'
+          }}
+        >
+          ☰
+        </button>
+      )}
+
       {/* SIDEBAR */}
       <div style={{ 
         width: '280px', 
@@ -299,10 +363,14 @@ function App() {
         padding: '32px 24px',
         borderRight: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
         height: '100vh',
-        position: 'fixed',
+        position: isMobile ? 'fixed' : 'sticky',
         left: 0,
         top: 0,
-        overflowY: 'auto'
+        overflowY: 'auto',
+        transition: 'transform 0.3s ease-in-out',
+        zIndex: 1000,
+        transform: isMobile && !isMobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)',
+        boxShadow: isMobile && isMobileMenuOpen ? '2px 0 8px rgba(0,0,0,0.2)' : 'none'
       }}>
         {/* Logo */}
         <div style={{ marginBottom: '32px' }}>
@@ -403,14 +471,38 @@ function App() {
         </div>
       </div>
 
+      {/* MOBILE OVERLAY */}
+      {isMobile && isMobileMenuOpen && (
+        <div 
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 999,
+            animation: 'fadeIn 0.3s ease'
+          }}
+        />
+      )}
+
       {/* MAIN CONTENT */}
-      <div style={{ marginLeft: '280px', padding: '32px', flex: 1, overflowY: 'auto', height: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+      <div style={{ 
+        marginLeft: isMobile ? '0px' : '280px', 
+        padding: isMobile ? '70px 16px 16px 16px' : '32px', 
+        flex: 1, 
+        overflowY: 'auto', 
+        height: '100vh', 
+        backgroundColor: 'var(--bg-primary)' 
+      }}>
         
         {/* HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
           
           {/* Search Bar */}
-          <div style={{ position: 'relative', flex: 1, maxWidth: '350px' }}>
+          <div style={{ position: 'relative', flex: 1, maxWidth: isMobile ? '100%' : '350px', width: '100%' }}>
             <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', zIndex: 1 }} />
             <input
               type="text"
@@ -424,7 +516,7 @@ function App() {
                 border: `1px solid ${showResults ? '#00D4FF' : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')}`,
                 borderRadius: '48px',
                 color: 'var(--text-primary)',
-                fontSize: '14px',
+                fontSize: '16px',
                 outline: 'none'
               }}
             />
@@ -479,7 +571,7 @@ function App() {
           </div>
 
           {/* Right Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             
             {/* LIVE TIMESTAMP */}
             <div style={{
@@ -495,7 +587,7 @@ function App() {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                backgroundColor: '#10b',
+                backgroundColor: '#10b981',
                 animation: 'pulse 2s infinite'
               }} />
               <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600' }}>LIVE</span>
@@ -519,7 +611,8 @@ function App() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                opacity: refreshing ? 0.7 : 1
+                opacity: refreshing ? 0.7 : 1,
+                minHeight: '44px'
               }}
             >
               <RefreshCw 
@@ -544,7 +637,8 @@ function App() {
                 color: 'var(--text-primary)', 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '10px' 
+                gap: '10px',
+                minHeight: '44px'
               }}>
               {theme === 'dark' ? <Sun size={18} style={{ color: '#FFD700' }} /> : <Moon size={18} style={{ color: '#00D4FF' }} />}
               <span style={{ fontSize: '13px', fontWeight: '500' }}>{theme === 'dark' ? 'Light' : 'Dark'}</span>
@@ -556,7 +650,7 @@ function App() {
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
           {filters.map(filter => (
             <button key={filter} onClick={() => setActiveFilter(filter)}
-              style={{ padding: '8px 24px', borderRadius: '40px', backgroundColor: activeFilter === filter ? '#00D4FF' : 'var(--bg-secondary)', color: activeFilter === filter ? '#0F172A' : 'var(--text-primary)', border: activeFilter === filter ? 'none' : `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, cursor: 'pointer', fontSize: '14px', fontWeight: activeFilter === filter ? '600' : '400' }}>
+              style={{ padding: '8px 24px', borderRadius: '40px', backgroundColor: activeFilter === filter ? '#00D4FF' : 'var(--bg-secondary)', color: activeFilter === filter ? '#0F172A' : 'var(--text-primary)', border: activeFilter === filter ? 'none' : `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, cursor: 'pointer', fontSize: '14px', fontWeight: activeFilter === filter ? '600' : '400', minHeight: '44px' }}>
               {filter}
             </button>
           ))}
@@ -566,14 +660,16 @@ function App() {
         {error && (
           <div style={{ 
             backgroundColor: 'rgba(239,68,68,0.15)', 
-            border: '1px solid #ef444333', 
+            border: '1px solid #ef4444', 
             borderRadius: '10px', 
             padding: '14px 18px', 
             marginBottom: '24px', 
             color: '#ef4444',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
           }}>
             <span>⚠️ {error}</span>
             <button
@@ -586,7 +682,8 @@ function App() {
                 padding: '6px 14px',
                 cursor: 'pointer',
                 fontSize: '13px',
-                fontWeight: '500'
+                fontWeight: '500',
+                minHeight: '44px'
               }}
             >
               Retry
@@ -617,7 +714,8 @@ function App() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  color: 'var(--text-primary)'
+                  color: 'var(--text-primary)',
+                  minHeight: '44px'
                 }}
               >
                 <Star
@@ -636,7 +734,7 @@ function App() {
         {/* 5-DAY FORECAST */}
         {forecastData.length > 0 && (
           <div style={{ marginTop: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>5-Day Forecast</h2>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                 {formatDate(currentTime)}
@@ -664,6 +762,16 @@ function App() {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+          .hamburger-btn {
+            display: flex !important;
+          }
         }
       `}</style>
     </div>

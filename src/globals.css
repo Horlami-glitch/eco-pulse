@@ -1,34 +1,28 @@
+/* src/styles/globals.css */
+
+/* CSS Variables for Themes */
 :root {
-  /* Dark Mode Colors */
-  --dark-bg-primary: #0F172A;
-  --dark-bg-secondary: #1E293B;
-  --dark-accent-cyan: #00D4FF;
-  --dark-accent-green: #10B981;
-  --dark-text-primary: #F1F5F9;
-  
-  /* Light Mode Colors */
-  --light-bg-primary: #F8FAFC;
-  --light-bg-secondary: #FFFFFF;
-  --light-accent-blue: #2563EB;
-  --light-accent-green: #059669;
-  --light-text-primary: #1E293B;
+  /* Dark Mode Colors (default) */
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --accent-cyan: #00D4FF;
+  --accent-green: #10B981;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Theme Application */
-[data-theme="dark"] {
-  --bg-primary: var(--dark-bg-primary);
-  --bg-secondary: var(--dark-bg-secondary);
-  --accent-cyan: var(--dark-accent-cyan);
-  --accent-green: var(--dark-accent-green);
-  --text-primary: var(--dark-text-primary);
-}
-
+/* Light Mode Override */
 [data-theme="light"] {
-  --bg-primary: var(--light-bg-primary);
-  --bg-secondary: var(--light-bg-secondary);
-  --accent-cyan: var(--light-accent-blue);
-  --accent-green: var(--light-accent-green);
-  --text-primary: var(--light-text-primary);
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #FFFFFF;
+  --accent-cyan: #2563EB;
+  --accent-green: #059669;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
 /* Global Reset */
@@ -43,7 +37,19 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+body.menu-open {
   overflow: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* Typography */
@@ -76,13 +82,14 @@ h2, .subtitle {
 /* Buttons */
 .btn-primary {
   background: var(--accent-cyan);
-  color: var(--dark-bg-primary);
+  color: var(--bg-primary);
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 44px;
 }
 
 .btn-primary:hover {
@@ -99,11 +106,12 @@ h2, .subtitle {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 44px;
 }
 
 .btn-secondary:hover {
   background: var(--accent-cyan);
-  color: var(--dark-bg-primary);
+  color: var(--bg-primary);
 }
 
 /* Weather Card */
@@ -113,12 +121,12 @@ h2, .subtitle {
   padding: 24px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
 }
 
 .weather-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: var(--card-shadow);
 }
 
 /* Forecast Card */
@@ -128,7 +136,7 @@ h2, .subtitle {
   padding: 20px 12px;
   text-align: center;
   transition: transform 0.2s ease;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
 }
 
 .forecast-card:hover {
@@ -136,7 +144,7 @@ h2, .subtitle {
   border-color: var(--accent-cyan);
 }
 
-/* Scrollbar Styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -150,97 +158,26 @@ h2, .subtitle {
 ::-webkit-scrollbar-thumb {
   background: var(--accent-cyan);
   border-radius: 4px;
-  transition: background 0.2s;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-green);
-}
-
-/* Animation for loading */
+/* Animations */
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.05);
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .weather-card {
-    padding: 16px;
-  }
-  
-  .forecast-card {
-    padding: 12px 8px;
-  }
-}
-
-/* Smooth transitions for all interactive elements */
-button, 
-input, 
-.weather-card, 
-.forecast-card,
-.filter-pill {
-  transition: all 0.2s ease-in-out;
-}
-
-/* Input focus styles */
-input:focus {
-  border-color: var(--accent-cyan) !important;
-  box-shadow: 0 0 0 2px rgba(0,212,255,0.1);
-}
-
-/* Loading spinner (optional) */
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--bg-secondary);
-  border-top-color: var(--accent-cyan);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* Glass morphism effect for cards (optional) */
-.glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Status indicators */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-badge.success {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10B981;
-}
-
-.status-badge.warning {
-  background: rgba(245, 158, 11, 0.2);
-  color: #F59E0B;
-}
-
-.status-badge.error {
-  background: rgba(239, 68, 68, 0.2);
-  color: #EF4444;
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
 
 /* Chart container */
@@ -251,33 +188,7 @@ input:focus {
   margin: 20px 0;
 }
 
-/* Tooltip styles */
-.custom-tooltip {
-  background: var(--bg-secondary);
-  border: 1px solid var(--accent-cyan);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-}
-
-/* Responsive grid */
-.responsive-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-/* Sidebar active link */
-.sidebar-link.active {
-  background: var(--accent-cyan);
-  color: var(--dark-bg-primary);
-}
-
-.sidebar-link:hover:not(.active) {
-  background: rgba(0, 212, 255, 0.1);
-}
-
-/* Filter pills container */
+/* Filter pills */
 .filter-pills-container {
   display: flex;
   gap: 12px;
@@ -285,43 +196,94 @@ input:focus {
   margin-bottom: 24px;
 }
 
-/* src/global.css - */
-:root {
-  --bg-primary: #0a1a1f;
-  --bg-secondary: #0d2228;
-  --bg-card: #112d35;
-  --text-primary: #ffffff;
-  --text-secondary: #8899a6;
-  --accent-green: #00c48a;
-  --border-color: rgba(0, 196, 138, 0.15);
-  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+/* ======================================== */
+/* MOBILE RESPONSIVE */
+/* ======================================== */
+
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1001;
+  background: var(--accent-cyan);
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--bg-primary);
+  box-shadow: var(--card-shadow);
 }
 
-[data-theme="light"] {
-  --bg-primary: #f0f7f4;
-  --bg-secondary: #e8f3ef;
-  --bg-card: #ffffff;
-  --text-primary: #0a1a1f;
-  --text-secondary: #5c7a89;
-  --accent-green: #00c48a;
-  --border-color: rgba(0, 196, 138, 0.2);
-  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+@media (max-width: 768px) {
+  .hamburger-btn {
+    display: flex !important;
+  }
+  
+  body {
+    overflow-x: hidden;
+  }
+  
+  button,
+  [onClick],
+  [role="button"],
+  .filter-pill,
+  .sidebar-link {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  input[type="text"],
+  input[type="search"],
+  input {
+    font-size: 16px !important;
+  }
+  
+  .weather-card {
+    padding: 16px;
+  }
+  
+  .forecast-card {
+    padding: 12px 8px;
+  }
+  
+  h1, .title {
+    font-size: 20px;
+    line-height: 28px;
+  }
+  
+  h2, .subtitle {
+    font-size: 16px;
+    line-height: 22px;
+  }
+  
+  .body-text {
+    font-size: 13px;
+    line-height: 20px;
+  }
+  
+  .chart-container {
+    padding: 12px;
+    overflow-x: auto;
+  }
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-}
-
-#root {
-  min-height: 100vh;
-  background: var(--bg-primary);
+@media (max-width: 375px) {
+  .weather-card {
+    padding: 12px;
+  }
+  
+  .forecast-card {
+    padding: 8px 6px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
 }
