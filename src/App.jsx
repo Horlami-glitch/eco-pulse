@@ -1,10 +1,11 @@
-// src/App.jsx - FIGMA MATCHING MOBILE LAYOUT
-// ✅ Logo: Eco (green) + Pulse (white) with leaf
+// src/App.jsx - FIGMA MATCHING MOBILE LAYOUT WITH HAMBURGER
+// ✅ Hamburger menu restored
+// ✅ Text stays inside boxes (no overflow)
+// ✅ Logo: Eco (green) + Pulse (white)
 // ✅ Dark mode: Half moon shape on top right
-// ✅ Header: Logo on left, theme toggle on right
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock } from 'lucide-react';
+import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock, Menu } from 'lucide-react';
 import WeatherCard from './components/WeatherCard';
 import WeatherOverview from './components/WeatherOverview';
 
@@ -62,7 +63,7 @@ function App() {
   useEffect(() => {
     if (!isDesktopLayout.current) {
       const handleClickOutside = (e) => {
-        if (isMobileMenuOpen && !e.target.closest('.sidebar') && !e.target.closest('.mobile-logo')) {
+        if (isMobileMenuOpen && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
           setIsMobileMenuOpen(false);
         }
       };
@@ -273,7 +274,6 @@ function App() {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
       hour12: true
     });
   };
@@ -378,9 +378,9 @@ function App() {
               transition: 'all 0.2s ease'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <MapPin size={14} style={{ color: selectedCity === city ? '#0F172A' : '#00D4FF' }} />
-              <span style={{ fontSize: '14px', fontWeight: selectedCity === city ? '600' : '400' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+              <MapPin size={14} style={{ color: selectedCity === city ? '#0F172A' : '#00D4FF', flexShrink: 0 }} />
+              <span style={{ fontSize: '14px', fontWeight: selectedCity === city ? '600' : '400', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {city}
               </span>
             </div>
@@ -389,7 +389,7 @@ function App() {
                 e.stopPropagation(); 
                 toggleFavorite(city); 
               }}
-              style={{ cursor: 'pointer', padding: '4px' }}
+              style={{ cursor: 'pointer', padding: '4px', flexShrink: 0 }}
             >
               <Star
                 size={16}
@@ -424,11 +424,12 @@ function App() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                overflow: 'hidden'
               }}
             >
-              <MapPin size={14} style={{ color: selectedCity === city ? '#0F172A' : '#00D4FF' }} />
-              <span style={{ fontSize: '14px', fontWeight: selectedCity === city ? '600' : '400' }}>
+              <MapPin size={14} style={{ color: selectedCity === city ? '#0F172A' : '#00D4FF', flexShrink: 0 }} />
+              <span style={{ fontSize: '14px', fontWeight: selectedCity === city ? '600' : '400', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {city}
               </span>
             </div>
@@ -442,7 +443,7 @@ function App() {
     </div>
   );
 
-  // DESKTOP LAYOUT (unchanged)
+  // DESKTOP LAYOUT
   if (isDesktopLayout.current) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
@@ -455,7 +456,7 @@ function App() {
           backgroundColor: 'var(--bg-primary)',
           overflowX: 'hidden'
         }}>
-          {/* Header with desktop logo */}
+          {/* Desktop Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Leaf size={28} style={{ color: '#10B981' }} />
@@ -464,8 +465,6 @@ function App() {
                 <span style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: '700' }}>Pulse</span>
               </h1>
             </div>
-            
-            {/* Dark mode toggle button - Half moon shape */}
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               style={{ 
@@ -475,7 +474,6 @@ function App() {
                 width: '44px',
                 height: '44px',
                 cursor: 'pointer', 
-                color: 'var(--text-primary)', 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
@@ -487,7 +485,6 @@ function App() {
 
           {/* Search Bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
-            
             <div style={{ position: 'relative', flex: 1, maxWidth: '350px', width: '100%' }}>
               <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', pointerEvents: 'none' }} />
               <input
@@ -542,7 +539,7 @@ function App() {
                           cursor: 'pointer'
                         }}
                       >
-                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{cityName}</div>
+                        <div style={{ fontWeight: '500', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{cityName}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{city.country}</div>
                       </div>
                     );
@@ -704,10 +701,10 @@ function App() {
               }}>
                 {filteredForecast.map((day, idx) => (
                   <div key={`${day.day}-${idx}`} style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>{day.day}</p>
+                    <p style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{day.day}</p>
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>{getWeatherIcon(day.condition)}</div>
                     <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px', color: 'var(--text-primary)' }}>{day.temp}°C</p>
-                    <p style={{ fontSize: '12px', opacity: 0.7, color: 'var(--text-secondary)' }}>{day.condition}</p>
+                    <p style={{ fontSize: '12px', opacity: 0.7, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>{day.condition}</p>
                   </div>
                 ))}
               </div>
@@ -729,7 +726,7 @@ function App() {
   }
 
   // ============================================
-  // MOBILE LAYOUT - FIGMA DESIGN
+  // MOBILE LAYOUT - WITH HAMBURGER MENU
   // ============================================
   return (
     <div style={{ 
@@ -739,31 +736,45 @@ function App() {
       backgroundColor: 'var(--bg-primary)' 
     }}>
       
-      {/* Mobile Header - Logo on left, Half Moon on right */}
+      {/* Mobile Header - Hamburger on left, Logo center, Moon on right */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '16px',
+        padding: '12px 16px',
         backgroundColor: 'var(--bg-secondary)',
         borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
         position: 'sticky',
         top: 0,
         zIndex: 100,
       }}>
-        {/* Logo - Click to open sidebar */}
-        <div 
-          className="mobile-logo"
+        {/* Hamburger Menu Button */}
+        <button 
+          className="hamburger-btn"
           onClick={() => setIsMobileMenuOpen(true)}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            cursor: 'pointer'
+          style={{
+            background: 'transparent',
+            border: 'none',
+            width: '44px',
+            height: '44px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '8px'
           }}
         >
-          <Leaf size={24} style={{ color: '#10B981' }} />
-          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '700' }}>
+          <Menu size={24} style={{ color: 'var(--text-primary)' }} />
+        </button>
+        
+        {/* Logo - Centered */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '6px'
+        }}>
+          <Leaf size={20} style={{ color: '#10B981' }} />
+          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
             <span style={{ color: '#10B981' }}>Eco</span>
             <span style={{ color: 'var(--text-primary)' }}>Pulse</span>
           </h1>
@@ -773,18 +784,16 @@ function App() {
         <button 
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           style={{ 
-            backgroundColor: 'transparent', 
+            background: 'transparent', 
             border: 'none', 
-            fontSize: '28px',
+            fontSize: '22px',
             cursor: 'pointer',
-            padding: '8px',
+            width: '44px',
+            height: '44px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '44px',
-            height: '44px',
-            borderRadius: '50%',
-            transition: 'all 0.2s ease'
+            borderRadius: '50%'
           }}
         >
           {theme === 'dark' ? '🌙' : '☀️'}
@@ -825,7 +834,7 @@ function App() {
         />
       )}
 
-      {/* Main Content */}
+      {/* Main Content - WITH PROPER TEXT WRAPPING */}
       <div style={{ 
         flex: 1, 
         padding: '16px', 
@@ -890,7 +899,7 @@ function App() {
                         cursor: 'pointer'
                       }}
                     >
-                      <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{cityName}</div>
+                      <div style={{ fontWeight: '500', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{cityName}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{city.country}</div>
                     </div>
                   );
@@ -905,7 +914,9 @@ function App() {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: '20px'
+          marginBottom: '20px',
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
           <div style={{
             display: 'flex',
@@ -962,7 +973,7 @@ function App() {
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '24px' }}>
           {filters.map(filter => (
             <button key={filter} onClick={() => setActiveFilter(filter)}
-              style={{ padding: '6px 20px', borderRadius: '40px', backgroundColor: activeFilter === filter ? '#00D4FF' : 'var(--bg-secondary)', color: activeFilter === filter ? '#0F172A' : 'var(--text-primary)', border: activeFilter === filter ? 'none' : `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, cursor: 'pointer', fontSize: '13px', fontWeight: activeFilter === filter ? '600' : '400', minHeight: '40px' }}>
+              style={{ padding: '6px 20px', borderRadius: '40px', backgroundColor: activeFilter === filter ? '#00D4FF' : 'var(--bg-secondary)', color: activeFilter === filter ? '#0F172A' : 'var(--text-primary)', border: activeFilter === filter ? 'none' : `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, cursor: 'pointer', fontSize: '13px', fontWeight: activeFilter === filter ? '600' : '400', minHeight: '40px', whiteSpace: 'nowrap' }}>
               {filter}
             </button>
           ))}
@@ -983,7 +994,7 @@ function App() {
             gap: '10px',
             fontSize: '13px'
           }}>
-            <span>⚠️ {error}</span>
+            <span style={{ wordBreak: 'break-word' }}>⚠️ {error}</span>
             <button
               onClick={retryFetchWeather}
               style={{
@@ -1030,10 +1041,10 @@ function App() {
             }}>
               {filteredForecast.map((day, idx) => (
                 <div key={`${day.day}-${idx}`} style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)' }}>{day.day}</p>
+                  <p style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{day.day}</p>
                   <div style={{ fontSize: '28px', marginBottom: '6px' }}>{getWeatherIcon(day.condition)}</div>
                   <p style={{ fontSize: '16px', fontWeight: '600', marginBottom: '2px', color: 'var(--text-primary)' }}>{day.temp}°C</p>
-                  <p style={{ fontSize: '10px', opacity: 0.7, color: 'var(--text-secondary)' }}>{day.condition}</p>
+                  <p style={{ fontSize: '10px', opacity: 0.7, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>{day.condition}</p>
                 </div>
               ))}
             </div>
@@ -1086,6 +1097,19 @@ function App() {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        
+        /* Prevent text overflow on mobile */
+        * {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .weather-card,
+        .weather-overview,
+        [class*="Card"] {
+          overflow-x: hidden;
+          word-wrap: break-word;
         }
       `}</style>
     </div>
