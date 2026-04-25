@@ -1,8 +1,7 @@
-// src/App.jsx - COMPLETE FIXED VERSION
-// ✅ Fixed: Search input working
-// ✅ Fixed: WeatherOverview no longer flickering
-// ✅ Fixed: Humidity, Wind, etc. stay inside box on mobile
-// ✅ Fixed: No continuous re-renders causing jumping
+// src/App.jsx - FIGMA MATCHING MOBILE LAYOUT
+// ✅ Logo: Eco (green) + Pulse (white) with leaf
+// ✅ Dark mode: Half moon shape on top right
+// ✅ Header: Logo on left, theme toggle on right
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock } from 'lucide-react';
@@ -32,13 +31,12 @@ function App() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [theme, setTheme] = useState('dark');
   
-  // FIXED: Use ref instead of state to prevent re-renders
   const isDesktopLayout = useRef(window.innerWidth > 768);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const searchTimeoutRef = useRef(null);
   const weatherFetchRef = useRef(null);
-  const searchInputRef = useRef(null); // ADDED: Reference to search input
+  const searchInputRef = useRef(null);
 
   const filters = ['All', 'Clear', 'Clouds', 'Rain'];
 
@@ -64,7 +62,7 @@ function App() {
   useEffect(() => {
     if (!isDesktopLayout.current) {
       const handleClickOutside = (e) => {
-        if (isMobileMenuOpen && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
+        if (isMobileMenuOpen && !e.target.closest('.sidebar') && !e.target.closest('.mobile-logo')) {
           setIsMobileMenuOpen(false);
         }
       };
@@ -235,7 +233,6 @@ function App() {
     }
   }, [selectedCity, fetchWeather, weatherData?.city]);
 
-  // FIXED: Simplified search handler - maintains focus
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -250,7 +247,6 @@ function App() {
     setSearchQuery('');
     setShowResults(false);
     setSearchResults([]);
-    // Clear the input value
     if (searchInputRef.current) {
       searchInputRef.current.value = '';
     }
@@ -348,8 +344,11 @@ function App() {
     }}>
       <div style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <Leaf size={28} style={{ color: '#00D4FF' }} />
-          <h1 style={{ color: '#00D4FF', fontSize: '24px', fontWeight: '700', margin: 0 }}>EcoPulse</h1>
+          <Leaf size={28} style={{ color: '#10B981' }} />
+          <h1 style={{ margin: 0 }}>
+            <span style={{ color: '#10B981', fontSize: '24px', fontWeight: '700' }}>Eco</span>
+            <span style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: '700' }}>Pulse</span>
+          </h1>
         </div>
         <p style={{ fontSize: '12px', opacity: 0.7, color: 'var(--text-secondary)', margin: 0 }}>
           Weather & Sustainability
@@ -443,7 +442,7 @@ function App() {
     </div>
   );
 
-  // DESKTOP LAYOUT
+  // DESKTOP LAYOUT (unchanged)
   if (isDesktopLayout.current) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
@@ -456,10 +455,40 @@ function App() {
           backgroundColor: 'var(--bg-primary)',
           overflowX: 'hidden'
         }}>
-          {/* SEARCH BAR - Moved directly here, not inside MainContent */}
+          {/* Header with desktop logo */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Leaf size={28} style={{ color: '#10B981' }} />
+              <h1 style={{ margin: 0 }}>
+                <span style={{ color: '#10B981', fontSize: '24px', fontWeight: '700' }}>Eco</span>
+                <span style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: '700' }}>Pulse</span>
+              </h1>
+            </div>
+            
+            {/* Dark mode toggle button - Half moon shape */}
+            <button 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              style={{ 
+                backgroundColor: 'var(--bg-secondary)', 
+                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, 
+                borderRadius: '50%', 
+                width: '44px',
+                height: '44px',
+                cursor: 'pointer', 
+                color: 'var(--text-primary)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: '22px'
+              }}>
+              {theme === 'dark' ? '🌙' : '☀️'}
+            </button>
+          </div>
+
+          {/* Search Bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
             
-            <div style={{ position: 'relative', flex: 1, maxWidth: isDesktopLayout.current ? '350px' : '100%', width: '100%' }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: '350px', width: '100%' }}>
               <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', pointerEvents: 'none' }} />
               <input
                 ref={searchInputRef}
@@ -572,24 +601,6 @@ function App() {
                 />
                 <span style={{ fontSize: '13px', fontWeight: '500' }}>Refresh</span>
               </button>
-
-              <button 
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                style={{ 
-                  backgroundColor: 'var(--bg-secondary)', 
-                  border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, 
-                  borderRadius: '48px', 
-                  padding: '10px 20px', 
-                  cursor: 'pointer', 
-                  color: 'var(--text-primary)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '10px',
-                  minHeight: '44px'
-                }}>
-                {theme === 'dark' ? <Sun size={18} style={{ color: '#FFD700' }} /> : <Moon size={18} style={{ color: '#00D4FF' }} />}
-                <span style={{ fontSize: '13px', fontWeight: '500' }}>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-              </button>
             </div>
           </div>
 
@@ -688,7 +699,7 @@ function App() {
               </div>
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: isDesktopLayout.current ? 'repeat(5, 1fr)' : 'repeat(auto-fit, minmax(120px, 1fr))', 
+                gridTemplateColumns: 'repeat(5, 1fr)', 
                 gap: '16px' 
               }}>
                 {filteredForecast.map((day, idx) => (
@@ -717,35 +728,70 @@ function App() {
     );
   }
 
-  // MOBILE LAYOUT
+  // ============================================
+  // MOBILE LAYOUT - FIGMA DESIGN
+  // ============================================
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: '100vh', 
+      backgroundColor: 'var(--bg-primary)' 
+    }}>
       
-      <button 
-        className="hamburger-btn"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        style={{
-          display: 'flex',
-          position: 'fixed',
-          top: '16px',
-          left: '16px',
-          zIndex: 1001,
-          background: '#00D4FF',
-          border: 'none',
-          width: '44px',
-          height: '44px',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '24px',
-          color: '#0F172A',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-        }}
-      >
-        ☰
-      </button>
+      {/* Mobile Header - Logo on left, Half Moon on right */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px',
+        backgroundColor: 'var(--bg-secondary)',
+        borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+      }}>
+        {/* Logo - Click to open sidebar */}
+        <div 
+          className="mobile-logo"
+          onClick={() => setIsMobileMenuOpen(true)}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            cursor: 'pointer'
+          }}
+        >
+          <Leaf size={24} style={{ color: '#10B981' }} />
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '700' }}>
+            <span style={{ color: '#10B981' }}>Eco</span>
+            <span style={{ color: 'var(--text-primary)' }}>Pulse</span>
+          </h1>
+        </div>
+        
+        {/* Dark Mode Toggle - Half Moon Shape */}
+        <button 
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          style={{ 
+            backgroundColor: 'transparent', 
+            border: 'none', 
+            fontSize: '28px',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          {theme === 'dark' ? '🌙' : '☀️'}
+        </button>
+      </div>
 
+      {/* Sidebar Drawer */}
       <div style={{ 
         width: '280px', 
         backgroundColor: 'var(--bg-secondary)',
@@ -762,6 +808,7 @@ function App() {
         <Sidebar />
       </div>
 
+      {/* Overlay */}
       {isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)}
@@ -778,20 +825,18 @@ function App() {
         />
       )}
 
+      {/* Main Content */}
       <div style={{ 
         flex: 1, 
-        padding: '70px 16px 16px 16px', 
+        padding: '16px', 
         overflowY: 'auto', 
-        overflowX: 'hidden',
-        height: '100vh', 
         backgroundColor: 'var(--bg-primary)',
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        {/* MOBILE SEARCH BAR - Same as desktop but full width */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
-          
-          <div style={{ position: 'relative', flex: 1, width: '100%' }}>
+        {/* Search Bar */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ position: 'relative', width: '100%' }}>
             <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', pointerEvents: 'none' }} />
             <input
               ref={searchInputRef}
@@ -855,11 +900,69 @@ function App() {
           </div>
         </div>
 
+        {/* LIVE Time and Refresh Row */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: 'var(--bg-secondary)',
+            padding: '8px 16px',
+            borderRadius: '48px',
+            border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981',
+              animation: 'pulse 2s infinite'
+            }} />
+            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600' }}>LIVE</span>
+            <Clock size={14} style={{ color: 'var(--text-secondary)' }} />
+            <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: '500' }}>
+              {formatTime(currentTime)}
+            </span>
+          </div>
+
+          <button
+            onClick={refreshWeather}
+            disabled={refreshing}
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              borderRadius: '48px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              opacity: refreshing ? 0.7 : 1,
+              minHeight: '40px'
+            }}
+          >
+            <RefreshCw 
+              size={14} 
+              style={{ 
+                color: '#00D4FF',
+                animation: refreshing ? 'spin 1s linear infinite' : 'none'
+              }} 
+            />
+            <span style={{ fontSize: '12px', fontWeight: '500' }}>Refresh</span>
+          </button>
+        </div>
+
         {/* Filter Pills */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '24px' }}>
           {filters.map(filter => (
             <button key={filter} onClick={() => setActiveFilter(filter)}
-              style={{ padding: '8px 24px', borderRadius: '40px', backgroundColor: activeFilter === filter ? '#00D4FF' : 'var(--bg-secondary)', color: activeFilter === filter ? '#0F172A' : 'var(--text-primary)', border: activeFilter === filter ? 'none' : `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, cursor: 'pointer', fontSize: '14px', fontWeight: activeFilter === filter ? '600' : '400', minHeight: '44px' }}>
+              style={{ padding: '6px 20px', borderRadius: '40px', backgroundColor: activeFilter === filter ? '#00D4FF' : 'var(--bg-secondary)', color: activeFilter === filter ? '#0F172A' : 'var(--text-primary)', border: activeFilter === filter ? 'none' : `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, cursor: 'pointer', fontSize: '13px', fontWeight: activeFilter === filter ? '600' : '400', minHeight: '40px' }}>
               {filter}
             </button>
           ))}
@@ -870,14 +973,15 @@ function App() {
             backgroundColor: 'rgba(239,68,68,0.15)', 
             border: '1px solid #ef4444', 
             borderRadius: '10px', 
-            padding: '14px 18px', 
-            marginBottom: '24px', 
+            padding: '12px', 
+            marginBottom: '20px', 
             color: '#ef4444',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '12px'
+            gap: '10px',
+            fontSize: '13px'
           }}>
             <span>⚠️ {error}</span>
             <button
@@ -887,11 +991,11 @@ function App() {
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
-                padding: '6px 14px',
+                padding: '6px 12px',
                 cursor: 'pointer',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: '500',
-                minHeight: '44px'
+                minHeight: '36px'
               }}
             >
               Retry
@@ -901,68 +1005,72 @@ function App() {
 
         {weatherData && (
           <>
-            <div style={{ width: '100%', overflow: 'hidden', marginBottom: '24px' }}>
+            <div style={{ width: '100%', overflow: 'hidden', marginBottom: '20px' }}>
               <WeatherCard weather={weatherData} />
             </div>
             
-            <div style={{ position: 'relative', width: '100%', overflow: 'hidden', marginTop: '24px' }}>
+            <div style={{ position: 'relative', width: '100%', overflow: 'hidden', marginTop: '20px' }}>
               <WeatherOverview weatherData={weatherData} theme={theme} />
-              
-              <button
-                onClick={() => toggleFavorite(weatherData.city)}
-                style={{
-                  position: 'absolute',
-                  top: '20px',
-                  right: '20px',
-                  backgroundColor: isCurrentCityFavorite ? 'rgba(255, 215, 0, 0.15)' : 'var(--bg-secondary)',
-                  border: `1px solid ${isCurrentCityFavorite ? '#FFD700' : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')}`,
-                  borderRadius: '48px',
-                  padding: '10px 18px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: 'var(--text-primary)',
-                  minHeight: '44px',
-                  zIndex: 10
-                }}
-              >
-                <Star
-                  size={18}
-                  fill={isCurrentCityFavorite ? '#FFD700' : 'none'}
-                  stroke={isCurrentCityFavorite ? '#FFD700' : 'currentColor'}
-                />
-                <span style={{ fontSize: '13px', fontWeight: '500' }}>
-                  {isCurrentCityFavorite ? 'Saved' : 'Add to Favorites'}
-                </span>
-              </button>
             </div>
           </>
         )}
 
         {forecastData.length > 0 && (
-          <div style={{ marginTop: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>5-Day Forecast</h2>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+          <div style={{ marginTop: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>5-Day Forecast</h2>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                 {formatDate(currentTime)}
               </span>
             </div>
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', 
-              gap: '16px' 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
+              gap: '12px' 
             }}>
               {filteredForecast.map((day, idx) => (
-                <div key={`${day.day}-${idx}`} style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>{day.day}</p>
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>{getWeatherIcon(day.condition)}</div>
-                  <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px', color: 'var(--text-primary)' }}>{day.temp}°C</p>
-                  <p style={{ fontSize: '12px', opacity: 0.7, color: 'var(--text-secondary)' }}>{day.condition}</p>
+                <div key={`${day.day}-${idx}`} style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)' }}>{day.day}</p>
+                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>{getWeatherIcon(day.condition)}</div>
+                  <p style={{ fontSize: '16px', fontWeight: '600', marginBottom: '2px', color: 'var(--text-primary)' }}>{day.temp}°C</p>
+                  <p style={{ fontSize: '10px', opacity: 0.7, color: 'var(--text-secondary)' }}>{day.condition}</p>
                 </div>
               ))}
             </div>
           </div>
+        )}
+
+        {/* Floating Favorite Button */}
+        {weatherData && (
+          <button
+            onClick={() => toggleFavorite(weatherData.city)}
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              backgroundColor: isCurrentCityFavorite ? 'rgba(255, 215, 0, 0.9)' : 'var(--bg-secondary)',
+              border: `1px solid ${isCurrentCityFavorite ? '#FFD700' : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')}`,
+              borderRadius: '48px',
+              padding: '10px 16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--text-primary)',
+              minHeight: '44px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              zIndex: 100
+            }}
+          >
+            <Star
+              size={16}
+              fill={isCurrentCityFavorite ? '#FFD700' : 'none'}
+              stroke={isCurrentCityFavorite ? '#FFD700' : 'currentColor'}
+            />
+            <span style={{ fontSize: '12px', fontWeight: '500' }}>
+              {isCurrentCityFavorite ? 'Saved' : 'Favorite'}
+            </span>
+          </button>
         )}
       </div>
 
@@ -978,13 +1086,6 @@ function App() {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
-        }
-        
-        @media (max-width: 768px) {
-          * {
-            max-width: 100%;
-            box-sizing: border-box;
-          }
         }
       `}</style>
     </div>
