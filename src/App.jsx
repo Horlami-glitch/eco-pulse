@@ -6,7 +6,7 @@
 // ✅ WeatherOverview stable
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock, Menu } from 'lucide-react';
+import { Search, X, Star, Leaf, MapPin, RefreshCw, Clock, Menu } from 'lucide-react';
 import WeatherCard from './components/WeatherCard';
 import WeatherOverview from './components/WeatherOverview';
 
@@ -769,14 +769,11 @@ function App() {
           <Menu size={24} style={{ color: 'var(--text-primary)' }} />
         </button>
         
-        {/* Logo - CENTER */}
+        {/* Logo - CENTER (naturally centered with space-between) */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '6px',
-          position: 'absolute',
-          left: '50%',
-          transform: 'translateX(-50%)'
+          gap: '6px'
         }}>
           <Leaf size={20} style={{ color: '#10B981' }} />
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
