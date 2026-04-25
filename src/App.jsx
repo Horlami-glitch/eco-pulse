@@ -1,6 +1,4 @@
-// src/App.jsx - COMPLETE FIXED VERSION WITH ALL FEATURES + MOBILE RESPONSIVE
-// ✅ Fixed: Abuja and all cities work, Live timestamp, Refresh, Favorites
-// ✅ Mobile: Hamburger menu, responsive layout, touch-friendly
+// src/App.jsx - DETECTS DESKTOP MODE ON MOBILE
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock } from 'lucide-react';
@@ -20,14 +18,8 @@ function App() {
   const [showResults, setShowResults] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
-  // ✅ Live timestamp
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // ✅ Mobile responsive states
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  
-  // ✅ Favorites start EMPTY
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('ecopulse_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -35,8 +27,52 @@ function App() {
   
   const [activeFilter, setActiveFilter] = useState('All');
   const [theme, setTheme] = useState('dark');
+  
+  // ✅ IMPORTANT: Detect if Desktop Mode is requested
+  const [isDesktopMode, setIsDesktopMode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const filters = ['All', 'Clear', 'Clouds', 'Rain'];
+
+  // ✅ Check for Desktop Mode
+  useEffect(() => {
+    const checkDesktopMode = () => {
+      // Check 1: Desktop Mode often sends different user agent
+      const ua = navigator.userAgent;
+      const isMobileUA = /Mobile|Android|iPhone|iPad|iPod/i.test(ua);
+      
+      // Check 2: Screen width detection
+      const screenWidth = window.screen.width;
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      
+      // Check 3: If width > 768px OR if user requested desktop site
+      const isWideScreen = window.innerWidth > 768;
+      
+      // Check 4: Some browsers set a flag for desktop mode
+      const hasDesktopHint = navigator.userAgent.includes('Desktop') || 
+                             window.matchMedia('(min-width: 769px)').matches;
+      
+      // If screen is wide OR user agent suggests desktop mode
+      const desktopModeDetected = isWideScreen || (window.innerWidth > 600 && !isMobileUA);
+      
+      setIsDesktopMode(desktopModeDetected);
+      
+      console.log('📱 Desktop Mode Detected:', desktopModeDetected);
+      console.log('Window Width:', window.innerWidth);
+      console.log('User Agent:', ua);
+    };
+    
+    checkDesktopMode();
+    
+    // Listen for resize and orientation changes
+    window.addEventListener('resize', checkDesktopMode);
+    window.addEventListener('orientationchange', checkDesktopMode);
+    
+    return () => {
+      window.removeEventListener('resize', checkDesktopMode);
+      window.removeEventListener('orientationchange', checkDesktopMode);
+    };
+  }, []);
 
   // ✅ Update time every second
   useEffect(() => {
@@ -45,32 +81,6 @@ function App() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // ✅ Check screen size for mobile
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      if (!mobile) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // ✅ Close mobile menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (isMobileMenuOpen && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [isMobileMenuOpen]);
 
   // ✅ Save favorites to localStorage
   useEffect(() => {
@@ -82,14 +92,26 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // ✅ FETCH WEATHER - FIXED FOR ALL CITIES
+  // ✅ Close mobile menu when clicking outside (only in mobile mode)
+  useEffect(() => {
+    if (!isDesktopMode) {
+      const handleClickOutside = (e) => {
+        if (isMobileMenuOpen && !e.target.closest('.sidebar') && !e.target.closest('.hamburger-btn')) {
+          setIsMobileMenuOpen(false);
+        }
+      };
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [isMobileMenuOpen, isDesktopMode]);
+
+  // ✅ FETCH WEATHER
   const fetchWeather = async (city) => {
     setLoading(true);
     setError(null);
     try {
       console.log(`🌍 Fetching weather for: ${city}`);
       
-      // Format city name for Nigerian cities to help API
       let searchCity = city;
       if (city.toLowerCase() === 'abuja') {
         searchCity = 'Abuja, NG';
@@ -146,7 +168,6 @@ function App() {
     } catch (err) {
       console.error('API Error:', err);
       
-      // Try fallback without country code
       if (err.response?.status === 404) {
         try {
           console.log('Trying without country code...');
@@ -188,7 +209,6 @@ function App() {
     }
   };
 
-  // ✅ Refresh weather
   const refreshWeather = () => {
     if (selectedCity) {
       setRefreshing(true);
@@ -197,7 +217,6 @@ function App() {
     }
   };
 
-  // ✅ Search for cities
   const searchCity = async () => {
     if (searchQuery.length < 2) return;
     try {
@@ -211,7 +230,6 @@ function App() {
     }
   };
 
-  // ✅ Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery) searchCity();
@@ -219,27 +237,23 @@ function App() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // ✅ Initial load
   useEffect(() => {
     fetchWeather('Lagos');
   }, []);
 
-  // ✅ Fetch when selected city changes
   useEffect(() => {
     if (selectedCity && weatherData?.city !== selectedCity) {
       fetchWeather(selectedCity);
     }
   }, [selectedCity]);
 
-  // ✅ Select city
   const selectCity = (cityName) => {
     setSelectedCity(cityName);
     setSearchQuery('');
     setShowResults(false);
-    if (isMobile) setIsMobileMenuOpen(false);
+    if (!isDesktopMode) setIsMobileMenuOpen(false);
   };
 
-  // ✅ Toggle favorite
   const toggleFavorite = (city) => {
     setFavorites(prev => {
       if (prev.includes(city)) {
@@ -250,14 +264,12 @@ function App() {
     });
   };
 
-  // ✅ Retry fetch
   const retryFetchWeather = () => {
     if (selectedCity) {
       fetchWeather(selectedCity);
     }
   };
 
-  // ✅ Format time
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -267,7 +279,6 @@ function App() {
     });
   };
 
-  // ✅ Format date
   const formatDate = (date) => {
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
@@ -276,7 +287,6 @@ function App() {
     });
   };
 
-  // ✅ Get weather icon
   const getWeatherIcon = (condition) => {
     const c = condition?.toLowerCase() || '';
     if (c === 'clear') return '☀️';
@@ -286,12 +296,10 @@ function App() {
     return '⛅';
   };
 
-  // ✅ Filter forecast
   const filteredForecast = activeFilter === 'All' 
     ? forecastData 
     : forecastData.filter(day => day.condition === activeFilter);
 
-  // ✅ CSS Variables
   const cssVariables = {
     dark: {
       '--bg-primary': '#0F172A',
@@ -314,7 +322,6 @@ function App() {
 
   const isCurrentCityFavorite = weatherData ? favorites.includes(weatherData.city) : false;
 
-  // ✅ Loading state
   if (loading && !weatherData) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0F172A' }}>
@@ -329,8 +336,8 @@ function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* HAMBURGER MENU BUTTON - MOBILE ONLY */}
-      {isMobile && (
+      {/* HAMBURGER MENU - ONLY SHOW IN MOBILE MODE (NOT DESKTOP MODE) */}
+      {!isDesktopMode && (
         <button 
           className="hamburger-btn"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -356,23 +363,25 @@ function App() {
         </button>
       )}
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR - BEHAVES DIFFERENTLY IN DESKTOP MODE */}
       <div style={{ 
         width: '280px', 
         backgroundColor: 'var(--bg-secondary)',
         padding: '32px 24px',
         borderRight: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
         height: '100vh',
-        position: isMobile ? 'fixed' : 'sticky',
+        // DESKTOP MODE: always visible as sticky
+        // MOBILE MODE: fixed and slides in/out
+        position: isDesktopMode ? 'sticky' : 'fixed',
         left: 0,
         top: 0,
         overflowY: 'auto',
         transition: 'transform 0.3s ease-in-out',
         zIndex: 1000,
-        transform: isMobile && !isMobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)',
-        boxShadow: isMobile && isMobileMenuOpen ? '2px 0 8px rgba(0,0,0,0.2)' : 'none'
+        // Only apply transform in mobile mode when menu is closed
+        transform: (!isDesktopMode && !isMobileMenuOpen) ? 'translateX(-100%)' : 'translateX(0)',
+        boxShadow: (!isDesktopMode && isMobileMenuOpen) ? '2px 0 8px rgba(0,0,0,0.2)' : 'none'
       }}>
-        {/* Logo */}
         <div style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <Leaf size={28} style={{ color: '#00D4FF' }} />
@@ -385,7 +394,6 @@ function App() {
 
         <div style={{ height: '1px', backgroundColor: 'rgba(0, 212, 255, 0.2)', marginBottom: '32px' }} />
 
-        {/* CITIES LIST */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '16px', opacity: 0.7, color: 'var(--text-secondary)', letterSpacing: '1px' }}>
             CITIES
@@ -432,7 +440,6 @@ function App() {
 
         <div style={{ height: '1px', backgroundColor: 'rgba(0, 212, 255, 0.2)', marginBottom: '24px' }} />
 
-        {/* FAVORITES SECTION */}
         <div>
           <h3 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '16px', opacity: 0.7, color: 'var(--text-secondary)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Star size={12} fill="#FFD700" stroke="#FFD700" />
@@ -471,8 +478,8 @@ function App() {
         </div>
       </div>
 
-      {/* MOBILE OVERLAY */}
-      {isMobile && isMobileMenuOpen && (
+      {/* MOBILE OVERLAY - ONLY IN MOBILE MODE */}
+      {!isDesktopMode && isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)}
           style={{
@@ -490,19 +497,19 @@ function App() {
 
       {/* MAIN CONTENT */}
       <div style={{ 
-        marginLeft: isMobile ? '0px' : '280px', 
-        padding: isMobile ? '70px 16px 16px 16px' : '32px', 
+        // DESKTOP MODE: marginLeft 280px to show sidebar
+        // MOBILE MODE: marginLeft 0, full width
+        marginLeft: isDesktopMode ? '280px' : '0px', 
+        padding: isDesktopMode ? '32px' : '70px 16px 16px 16px', 
         flex: 1, 
         overflowY: 'auto', 
         height: '100vh', 
         backgroundColor: 'var(--bg-primary)' 
       }}>
         
-        {/* HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
           
-          {/* Search Bar */}
-          <div style={{ position: 'relative', flex: 1, maxWidth: isMobile ? '100%' : '350px', width: '100%' }}>
+          <div style={{ position: 'relative', flex: 1, maxWidth: isDesktopMode ? '350px' : '100%', width: '100%' }}>
             <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', zIndex: 1 }} />
             <input
               type="text"
@@ -525,7 +532,6 @@ function App() {
                 onClick={() => { setSearchQuery(''); setShowResults(false); }} />
             )}
             
-            {/* SEARCH RESULTS */}
             {showResults && searchResults.length > 0 && (
               <div style={{ 
                 position: 'absolute', top: '100%', left: 0, right: 0, 
@@ -570,10 +576,8 @@ function App() {
             )}
           </div>
 
-          {/* Right Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             
-            {/* LIVE TIMESTAMP */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -597,7 +601,6 @@ function App() {
               </span>
             </div>
 
-            {/* REFRESH BUTTON */}
             <button
               onClick={refreshWeather}
               disabled={refreshing}
@@ -625,7 +628,6 @@ function App() {
               <span style={{ fontSize: '13px', fontWeight: '500' }}>Refresh</span>
             </button>
 
-            {/* THEME TOGGLE */}
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               style={{ 
@@ -646,7 +648,6 @@ function App() {
           </div>
         </div>
 
-        {/* FILTER PILLS */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
           {filters.map(filter => (
             <button key={filter} onClick={() => setActiveFilter(filter)}
@@ -656,7 +657,6 @@ function App() {
           ))}
         </div>
 
-        {/* ERROR WITH RETRY */}
         {error && (
           <div style={{ 
             backgroundColor: 'rgba(239,68,68,0.15)', 
@@ -691,7 +691,6 @@ function App() {
           </div>
         )}
 
-        {/* WEATHER DISPLAY */}
         {weatherData && (
           <>
             <WeatherCard weather={weatherData} />
@@ -699,7 +698,6 @@ function App() {
             <div style={{ position: 'relative' }}>
               <WeatherOverview weatherData={weatherData} theme={theme} />
               
-              {/* FAVORITE BUTTON */}
               <button
                 onClick={() => toggleFavorite(weatherData.city)}
                 style={{
@@ -731,7 +729,6 @@ function App() {
           </>
         )}
 
-        {/* 5-DAY FORECAST */}
         {forecastData.length > 0 && (
           <div style={{ marginTop: '32px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
@@ -766,12 +763,6 @@ function App() {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
-        }
-        
-        @media (max-width: 768px) {
-          .hamburger-btn {
-            display: flex !important;
-          }
         }
       `}</style>
     </div>
