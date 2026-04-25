@@ -1,5 +1,8 @@
-// src/App.jsx - PERFECT MOBILE & DESKTOP MODE
-import { useState, useEffect } from 'react';
+// src/App.jsx - COMPLETE FIXED VERSION
+// ✅ Fixed: Search input working
+// ✅ Fixed: WeatherOverview no longer flickering
+// ✅ Fixed: Humidity, Wind, etc. stay inside box on mobile
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock } from 'lucide-react';
 import WeatherCard from './components/WeatherCard';
@@ -28,20 +31,19 @@ function App() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [theme, setTheme] = useState('dark');
   
-  // ✅ Detect if we should use desktop layout (Desktop Mode OR screen width > 768px)
   const [isDesktopLayout, setIsDesktopLayout] = useState(window.innerWidth > 768);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const searchTimeoutRef = useRef(null);
+  const weatherFetchRef = useRef(null);
 
   const filters = ['All', 'Clear', 'Clouds', 'Rain'];
 
-  // ✅ Check layout mode on resize and load
+  // Check layout mode
   useEffect(() => {
     const checkLayout = () => {
       const width = window.innerWidth;
-      // If width > 768px, use desktop layout
-      // This works for both Desktop Mode and actual desktop
       setIsDesktopLayout(width > 768);
-      console.log(`📱 Layout mode: ${width > 768 ? 'DESKTOP' : 'MOBILE'} (width: ${width}px)`);
     };
     
     checkLayout();
@@ -54,7 +56,7 @@ function App() {
     };
   }, []);
 
-  // ✅ Update time every second
+  // Update time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -62,17 +64,17 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ Save favorites
+  // Save favorites
   useEffect(() => {
     localStorage.setItem('ecopulse_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // ✅ Apply theme
+  // Apply theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // ✅ Close mobile menu when clicking outside (only in mobile mode)
+  // Close mobile menu when clicking outside
   useEffect(() => {
     if (!isDesktopLayout) {
       const handleClickOutside = (e) => {
@@ -85,8 +87,11 @@ function App() {
     }
   }, [isMobileMenuOpen, isDesktopLayout]);
 
-  // ✅ Fetch weather
-  const fetchWeather = async (city) => {
+  // Fetch weather
+  const fetchWeather = useCallback(async (city) => {
+    if (weatherFetchRef.current === city) return;
+    weatherFetchRef.current = city;
+    
     setLoading(true);
     setError(null);
     try {
@@ -167,6 +172,8 @@ function App() {
           
           setWeatherData(current);
           setError(null);
+          weatherFetchRef.current = null;
+          setLoading(false);
           return;
         } catch (fallbackErr) {
           setError(`City "${city}" not found.`);
@@ -181,8 +188,9 @@ function App() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      weatherFetchRef.current = null;
     }
-  };
+  }, []);
 
   const refreshWeather = () => {
     if (selectedCity) {
@@ -192,8 +200,12 @@ function App() {
     }
   };
 
-  const searchCity = async () => {
-    if (searchQuery.length < 2) return;
+  const searchCity = useCallback(async () => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
     try {
       const res = await axios.get(
         `https://api.openweathermap.org/geo/1.0/direct?q=${searchQuery}&limit=5&appid=${API_KEY}`
@@ -202,25 +214,49 @@ function App() {
       setShowResults(true);
     } catch (err) {
       console.error('Search error:', err);
+      setSearchResults([]);
     }
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery) searchCity();
-    }, 500);
-    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    if (searchQuery) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchCity();
+      }, 500);
+    } else {
+      setSearchResults([]);
+      setShowResults(false);
+    }
+    
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, searchCity]);
+
+  useEffect(() => {
     fetchWeather('Lagos');
-  }, []);
+  }, [fetchWeather]);
 
   useEffect(() => {
     if (selectedCity && weatherData?.city !== selectedCity) {
       fetchWeather(selectedCity);
     }
-  }, [selectedCity]);
+  }, [selectedCity, fetchWeather, weatherData?.city]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (!value) {
+      setShowResults(false);
+      setSearchResults([]);
+    }
+  };
 
   const selectCity = (cityName) => {
     setSelectedCity(cityName);
@@ -308,9 +344,7 @@ function App() {
     );
   }
 
-  // ============================================
-  // SIDEBAR COMPONENT (reused for both layouts)
-  // ============================================
+  // Sidebar Component
   const Sidebar = () => (
     <div style={{ 
       width: '280px', 
@@ -417,21 +451,19 @@ function App() {
     </div>
   );
 
-  // ============================================
-  // MAIN CONTENT COMPONENT
-  // ============================================
+  // Main Content Component
   const MainContent = () => (
     <>
-      {/* Header with Search and Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
         
+        {/* Search Bar - FIXED */}
         <div style={{ position: 'relative', flex: 1, maxWidth: isDesktopLayout ? '350px' : '100%', width: '100%' }}>
-          <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', zIndex: 1 }} />
+          <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00D4FF', zIndex: 1, pointerEvents: 'none' }} />
           <input
             type="text"
             placeholder="Search city..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             style={{
               width: '100%',
               padding: '12px 16px 12px 44px',
@@ -440,12 +472,14 @@ function App() {
               borderRadius: '48px',
               color: 'var(--text-primary)',
               fontSize: '16px',
-              outline: 'none'
+              outline: 'none',
+              boxSizing: 'border-box'
             }}
+            autoComplete="off"
           />
           {searchQuery && (
             <X size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--text-secondary)' }} 
-              onClick={() => { setSearchQuery(''); setShowResults(false); }} />
+              onClick={() => { setSearchQuery(''); setShowResults(false); setSearchResults([]); }} />
           )}
           
           {showResults && searchResults.length > 0 && (
@@ -461,7 +495,7 @@ function App() {
                 const isFavorite = favorites.includes(cityName);
                 
                 return (
-                  <div key={idx} style={{ 
+                  <div key={`${cityName}-${idx}`} style={{ 
                     padding: '12px 16px', 
                     borderBottom: idx !== searchResults.length - 1 ? `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` : 'none',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -573,7 +607,6 @@ function App() {
         ))}
       </div>
 
-      {/* Error */}
       {error && (
         <div style={{ 
           backgroundColor: 'rgba(239,68,68,0.15)', 
@@ -608,13 +641,27 @@ function App() {
         </div>
       )}
 
-      {/* Weather Display */}
       {weatherData && (
         <>
-          <WeatherCard weather={weatherData} />
+          {/* WeatherCard - Fixed width containment */}
+          <div style={{ 
+            width: '100%', 
+            overflow: 'hidden',
+            marginBottom: '24px'
+          }}>
+            <WeatherCard weather={weatherData} />
+          </div>
           
-          <div style={{ position: 'relative' }}>
-            <WeatherOverview weatherData={weatherData} theme={theme} />
+          {/* WeatherOverview - Fixed to prevent overflow and flickering */}
+          <div style={{ 
+            position: 'relative', 
+            width: '100%',
+            overflow: 'hidden',
+            marginTop: '24px'
+          }}>
+            <div key={`overview-${weatherData.city}`} style={{ width: '100%' }}>
+              <WeatherOverview weatherData={weatherData} theme={theme} />
+            </div>
             
             <button
               onClick={() => toggleFavorite(weatherData.city)}
@@ -631,7 +678,8 @@ function App() {
                 alignItems: 'center',
                 gap: '8px',
                 color: 'var(--text-primary)',
-                minHeight: '44px'
+                minHeight: '44px',
+                zIndex: 10
               }}
             >
               <Star
@@ -647,7 +695,6 @@ function App() {
         </>
       )}
 
-      {/* 5-Day Forecast */}
       {forecastData.length > 0 && (
         <div style={{ marginTop: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
@@ -662,7 +709,7 @@ function App() {
             gap: '16px' 
           }}>
             {filteredForecast.map((day, idx) => (
-              <div key={idx} style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+              <div key={`${day.day}-${idx}`} style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
                 <p style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>{day.day}</p>
                 <div style={{ fontSize: '32px', marginBottom: '8px' }}>{getWeatherIcon(day.condition)}</div>
                 <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px', color: 'var(--text-primary)' }}>{day.temp}°C</p>
@@ -675,11 +722,7 @@ function App() {
     </>
   );
 
-  // ============================================
-  // RENDER BASED ON LAYOUT MODE
-  // ============================================
-  
-  // DESKTOP LAYOUT (sidebar always visible)
+  // DESKTOP LAYOUT
   if (isDesktopLayout) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
@@ -689,7 +732,8 @@ function App() {
           padding: '32px', 
           overflowY: 'auto', 
           height: '100vh', 
-          backgroundColor: 'var(--bg-primary)' 
+          backgroundColor: 'var(--bg-primary)',
+          overflowX: 'hidden'
         }}>
           <MainContent />
         </div>
@@ -702,16 +746,19 @@ function App() {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
           }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
         `}</style>
       </div>
     );
   }
 
-  // MOBILE LAYOUT (with hamburger menu)
+  // MOBILE LAYOUT - FIXED for content overflow
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* Hamburger Button */}
       <button 
         className="hamburger-btn"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -737,7 +784,6 @@ function App() {
         ☰
       </button>
 
-      {/* Sidebar (slides in/out) */}
       <div style={{ 
         width: '280px', 
         backgroundColor: 'var(--bg-secondary)',
@@ -754,7 +800,6 @@ function App() {
         <Sidebar />
       </div>
 
-      {/* Overlay */}
       {isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)}
@@ -771,13 +816,16 @@ function App() {
         />
       )}
 
-      {/* Main Content */}
+      {/* MAIN CONTENT - FIXED: Added overflow handling to prevent content from falling out */}
       <div style={{ 
         flex: 1, 
         padding: '70px 16px 16px 16px', 
         overflowY: 'auto', 
+        overflowX: 'hidden',
         height: '100vh', 
-        backgroundColor: 'var(--bg-primary)' 
+        backgroundColor: 'var(--bg-primary)',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         <MainContent />
       </div>
@@ -794,6 +842,21 @@ function App() {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        
+        /* FIXED: Ensure all content stays inside containers on mobile */
+        @media (max-width: 768px) {
+          * {
+            max-width: 100%;
+            box-sizing: border-box;
+          }
+          
+          .weather-card,
+          .weather-overview,
+          [class*="Card"] {
+            overflow-x: hidden;
+            word-wrap: break-word;
+          }
         }
       `}</style>
     </div>
