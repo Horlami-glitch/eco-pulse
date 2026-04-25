@@ -1,8 +1,9 @@
-// src/App.jsx - FIGMA MATCHING MOBILE LAYOUT WITH HAMBURGER
-// ✅ Hamburger menu restored
-// ✅ Text stays inside boxes (no overflow)
-// ✅ Logo: Eco (green) + Pulse (white)
-// ✅ Dark mode: Half moon shape on top right
+// src/App.jsx - COMPLETE FIXED VERSION
+// ✅ Hamburger LEFT | Logo CENTER | Moon RIGHT
+// ✅ Eco in green (#10B981) | Pulse in white
+// ✅ Search working properly
+// ✅ No text overflow on mobile
+// ✅ WeatherOverview stable
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Search, X, Sun, Moon, Star, Leaf, MapPin, RefreshCw, Clock, Menu } from 'lucide-react';
@@ -726,7 +727,7 @@ function App() {
   }
 
   // ============================================
-  // MOBILE LAYOUT - WITH HAMBURGER MENU
+  // MOBILE LAYOUT - Hamburger LEFT | Logo CENTER | Moon RIGHT
   // ============================================
   return (
     <div style={{ 
@@ -736,7 +737,7 @@ function App() {
       backgroundColor: 'var(--bg-primary)' 
     }}>
       
-      {/* Mobile Header - Hamburger on left, Logo center, Moon on right */}
+      {/* Mobile Header - Hamburger LEFT | Logo CENTER | Moon RIGHT */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -748,7 +749,7 @@ function App() {
         top: 0,
         zIndex: 100,
       }}>
-        {/* Hamburger Menu Button */}
+        {/* Hamburger Menu Button - LEFT */}
         <button 
           className="hamburger-btn"
           onClick={() => setIsMobileMenuOpen(true)}
@@ -761,17 +762,21 @@ function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: '8px'
+            borderRadius: '8px',
+            flexShrink: 0
           }}
         >
           <Menu size={24} style={{ color: 'var(--text-primary)' }} />
         </button>
         
-        {/* Logo - Centered */}
+        {/* Logo - CENTER */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '6px'
+          gap: '6px',
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)'
         }}>
           <Leaf size={20} style={{ color: '#10B981' }} />
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
@@ -780,7 +785,7 @@ function App() {
           </h1>
         </div>
         
-        {/* Dark Mode Toggle - Half Moon Shape */}
+        {/* Dark Mode Toggle - RIGHT */}
         <button 
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           style={{ 
@@ -793,7 +798,8 @@ function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: '50%'
+            borderRadius: '50%',
+            flexShrink: 0
           }}
         >
           {theme === 'dark' ? '🌙' : '☀️'}
@@ -834,7 +840,7 @@ function App() {
         />
       )}
 
-      {/* Main Content - WITH PROPER TEXT WRAPPING */}
+      {/* Main Content */}
       <div style={{ 
         flex: 1, 
         padding: '16px', 
