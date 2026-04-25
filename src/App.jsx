@@ -17,10 +17,8 @@ function App() {
   const [showResults, setShowResults] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
-  // ✅ Live timestamp
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // ✅ Favorites start EMPTY
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('ecopulse_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -31,7 +29,6 @@ function App() {
 
   const filters = ['All', 'Clear', 'Clouds', 'Rain'];
 
-  // ✅ Update time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -39,17 +36,17 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ Save favorites to localStorage
+  
   useEffect(() => {
     localStorage.setItem('ecopulse_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // ✅ Apply theme
+  
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // ✅ FETCH WEATHER - FIXED FOR ALL CITIES
+  
   const fetchWeather = async (city) => {
     setLoading(true);
     setError(null);
